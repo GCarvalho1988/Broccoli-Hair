@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generate Weekly Report — Sectra UK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+  <style>
+    /* ─── Reset & base ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:      #1B3A6B;
+      --navy-mid:  #2a5298;
+      --navy-lt:   #e8edf5;
+      --navy-xs:   #f4f6fb;
+      --body:      #2c3545;
+      --muted:     #6b7280;
+      --border:    #dce3ed;
+      --white:     #ffffff;
+
+      --font-display: 'Cormorant Garamond', Georgia, serif;
+      --font-body:    'DM Sans', system-ui, sans-serif;
+    }
+
+    html { font-size: 15px; }
+
+    body {
+      font-family: var(--font-body);
+      color: var(--body);
+      background: #f0f2f7;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ─── Header ────────────────────────────────────────────────────── */
+    .site-header {
+      background: var(--navy);
+      padding: 1.1rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: 0 2px 12px rgba(27,58,107,0.28);
+      flex-shrink: 0;
+    }
+
+    .header-brand {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.92);
+      letter-spacing: 0.04em;
+    }
+
+    .header-brand em {
+      font-style: normal;
+      color: rgba(255,255,255,0.4);
+      font-weight: 300;
+      margin: 0 0.55rem;
+    }
+
+    /* ─── Main content area ─────────────────────────────────────────── */
+    .main {
+      flex: 1;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 3.5rem 1.5rem 4rem;
+    }
+
+    /* ─── Card ──────────────────────────────────────────────────────── */
+    .card {
+      background: var(--white);
+      border-radius: 4px;
+      box-shadow: 0 2px 16px rgba(27,58,107,0.10);
+      width: 100%;
+      max-width: 720px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      background: var(--navy);
+      padding: 2rem 2.5rem 1.75rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-header::after {
+      content: '';
+      position: absolute;
+      top: 0; right: 0; bottom: 0;
+      width: 180px;
+      background: linear-gradient(135deg, transparent, rgba(255,255,255,0.04));
+      pointer-events: none;
+    }
+
+    .card-header-eyebrow {
+      font-family: var(--font-display);
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 0.5rem;
+    }
+
+    .card-header-title {
+      font-family: var(--font-display);
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+      color: var(--white);
+    }
+
+    /* ─── Card body ─────────────────────────────────────────────────── */
+    .card-body {
+      padding: 2.25rem 2.5rem 2.5rem;
+    }
+
+    /* ─── Form steps ────────────────────────────────────────────────── */
+    .form-step {
+      margin-bottom: 2rem;
+    }
+
+    .form-step:last-of-type {
+      margin-bottom: 0;
+    }
+
+    .step-label {
+      display: flex;
+      align-items: baseline;
+      gap: 0.6rem;
+      margin-bottom: 0.65rem;
+    }
+
+    .step-number {
+      font-family: var(--font-display);
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--navy-mid);
+      background: var(--navy-lt);
+      padding: 0.15em 0.55em;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    .step-title {
+      font-family: var(--font-body);
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--body);
+      letter-spacing: 0.02em;
+    }
+
+    .step-hint {
+      font-size: 0.78rem;
+      font-weight: 300;
+      color: var(--muted);
+      margin-top: 0.1rem;
+    }
+
+    /* ─── Transcript textarea ───────────────────────────────────────── */
+    .transcript-textarea {
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      font-weight: 300;
+      line-height: 1.65;
+      color: var(--body);
+      background: var(--navy-xs);
+      border: 1.5px solid var(--border);
+      border-radius: 3px;
+      padding: 0.85rem 1rem;
+      resize: vertical;
+      min-height: 14rem;
+      width: 100%;
+      transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+    }
+
+    .transcript-textarea::placeholder {
+      color: #9aa3b0;
+      font-style: italic;
+    }
+
+    .transcript-textarea:focus {
+      outline: none;
+      border-color: var(--navy-mid);
+      background: var(--white);
+      box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.10);
+    }
+
+    /* ─── File input ────────────────────────────────────────────────── */
+    .file-upload-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.85rem 1rem;
+      background: var(--navy-xs);
+      border: 1.5px dashed var(--border);
+      border-radius: 3px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .file-upload-wrapper:focus-within {
+      border-color: var(--navy-mid);
+      background: var(--white);
+    }
+
+    .file-upload-icon {
+      flex-shrink: 0;
+      width: 2rem;
+      height: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+    }
+
+    .file-upload-icon svg {
+      width: 1.35rem;
+      height: 1.35rem;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.75;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .file-upload-text {
+      flex: 1;
+    }
+
+    .file-upload-label {
+      font-size: 0.82rem;
+      font-weight: 400;
+      color: var(--body);
+      cursor: pointer;
+      display: block;
+    }
+
+    .file-upload-meta {
+      font-size: 0.73rem;
+      font-weight: 300;
+      color: var(--muted);
+      margin-top: 0.15rem;
+    }
+
+    /* Hide the native file input but keep it accessible */
+    .file-input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+
+    /* ─── Auto-fetch notice ─────────────────────────────────────────── */
+    .auto-notice {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      background: var(--navy-lt);
+      border-left: 3px solid var(--navy-mid);
+      border-radius: 0 3px 3px 0;
+      padding: 0.7rem 1rem;
+      margin: 2rem 0;
+    }
+
+    .auto-notice-icon {
+      flex-shrink: 0;
+      color: var(--navy-mid);
+    }
+
+    .auto-notice-icon svg {
+      width: 1rem;
+      height: 1rem;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .auto-notice-text {
+      font-size: 0.8rem;
+      font-weight: 400;
+      color: var(--navy);
+    }
+
+    /* ─── Generate button ───────────────────────────────────────────── */
+    .btn-generate {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      width: 100%;
+      padding: 1rem 1.5rem;
+      background: var(--navy);
+      color: var(--white);
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+      box-shadow: 0 2px 8px rgba(27,58,107,0.25);
+      margin-top: 0.25rem;
+    }
+
+    .btn-generate:hover:not(:disabled) {
+      background: var(--navy-mid);
+      box-shadow: 0 4px 14px rgba(27,58,107,0.32);
+    }
+
+    .btn-generate:active:not(:disabled) {
+      transform: scale(0.985);
+    }
+
+    .btn-generate:disabled {
+      opacity: 0.75;
+      cursor: not-allowed;
+    }
+
+    /* ─── Spinner ───────────────────────────────────────────────────── */
+    .spinner {
+      display: none;
+      width: 1.1rem;
+      height: 1.1rem;
+      border: 2px solid rgba(255,255,255,0.35);
+      border-top-color: rgba(255,255,255,0.9);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ─── Status message ────────────────────────────────────────────── */
+    .status-message {
+      display: none;
+      text-align: center;
+      font-size: 0.8rem;
+      font-weight: 300;
+      color: var(--muted);
+      margin-top: 0.9rem;
+      letter-spacing: 0.01em;
+    }
+
+    /* ─── Loading state classes ─────────────────────────────────────── */
+    .is-loading .spinner        { display: block; }
+    .is-loading .btn-text       { opacity: 0.7; }
+    .is-loading .status-message { display: block; }
+  </style>
+</head>
+<body>
+
+  <!-- ── Header ──────────────────────────────────────────────────── -->
+  <header class="site-header">
+    <div class="header-brand">SECTRA <em>·</em> Sales Intelligence</div>
+  </header>
+
+  <!-- ── Main ────────────────────────────────────────────────────── -->
+  <main class="main">
+    <div class="card">
+
+      <!-- Card header -->
+      <div class="card-header">
+        <p class="card-header-eyebrow">Sectra UK &nbsp;|&nbsp; Sales Manager Report</p>
+        <h1 class="card-header-title">Weekly Report Generator</h1>
+      </div>
+
+      <!-- Card body: the form -->
+      <div class="card-body">
+        <form id="reportForm"
+              method="POST"
+              action="/generate"
+              enctype="multipart/form-data"
+              onsubmit="handleSubmit(event)">
+
+          <!-- Step 1: Transcript -->
+          <div class="form-step">
+            <div class="step-label">
+              <span class="step-number">Step 1</span>
+              <div>
+                <div class="step-title">Teams Meeting Transcript</div>
+                <div class="step-hint">Paste the full transcript from your weekly pipeline meeting.</div>
+              </div>
+            </div>
+            <textarea
+              class="transcript-textarea"
+              id="transcript"
+              name="transcript"
+              placeholder="Paste transcript here…"
+              spellcheck="false"
+              autocomplete="off"></textarea>
+          </div>
+
+          <!-- Step 2: Portfolio PDF -->
+          <div class="form-step">
+            <div class="step-label">
+              <span class="step-number">Step 2</span>
+              <div>
+                <div class="step-title">Portfolio PDF <span style="font-weight:300; color:var(--muted);">— optional</span></div>
+                <div class="step-hint">Upload the latest Portfolio document if available.</div>
+              </div>
+            </div>
+
+            <label class="file-upload-wrapper" for="portfolio_pdf">
+              <span class="file-upload-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="12" y1="18" x2="12" y2="12"/>
+                  <line x1="9" y1="15" x2="15" y2="15"/>
+                </svg>
+              </span>
+              <span class="file-upload-text">
+                <span class="file-upload-label" id="fileLabel">Choose file or drop here</span>
+                <span class="file-upload-meta">PDF only &mdash; max 20 MB</span>
+              </span>
+            </label>
+            <input
+              class="file-input"
+              type="file"
+              id="portfolio_pdf"
+              name="portfolio_pdf"
+              accept="application/pdf"
+              onchange="updateFileLabel(this)">
+          </div>
+
+          <!-- Auto-fetch notice -->
+          <div class="auto-notice" role="note">
+            <span class="auto-notice-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+            </span>
+            <span class="auto-notice-text">Dashboard &amp; Smartsheet data are fetched automatically — no action required.</span>
+          </div>
+
+          <!-- Generate button -->
+          <button class="btn-generate" type="submit" id="generateBtn">
+            <span class="spinner" id="spinner" aria-hidden="true"></span>
+            <span class="btn-text" id="btnText">Generate Report</span>
+          </button>
+
+          <!-- Status message (shown during loading) -->
+          <p class="status-message" id="statusMsg" role="status">
+            Generating report&hellip; this takes around 30 seconds
+          </p>
+
+        </form>
+      </div><!-- /card-body -->
+
+    </div><!-- /card -->
+  </main>
+
+  <script>
+    function handleSubmit(e) {
+      const form = document.getElementById('reportForm');
+      const btn  = document.getElementById('generateBtn');
+      const form_wrapper = form.closest('.card-body') || form;
+
+      // Show loading state on the button area
+      btn.disabled = true;
+      form_wrapper.classList.add('is-loading');
+
+      // Let the form submit normally (full page navigation)
+      // — no need to prevent default
+    }
+
+    function updateFileLabel(input) {
+      const label = document.getElementById('fileLabel');
+      if (input.files && input.files.length > 0) {
+        label.textContent = input.files[0].name;
+      } else {
+        label.textContent = 'Choose file or drop here';
+      }
+    }
+  </script>
+
+</body>
+</html>
