@@ -410,10 +410,13 @@
       .updates-section   { page-break-before: always; }
 
       a { text-decoration: none; color: inherit; }
+      /* AI-draft amber flag is screen-only — clean document on print */
+      .ai-draft .field-textarea,
+      .ai-draft { border-color: var(--border) !important; background: transparent !important; }
     }
   </style>
 </head>
-<body>
+<body data-report-date="{{ report_date | e }}">
 
   <!-- ── Toolbar (hidden on print) ──────────────────────────────── -->
   <div class="toolbar no-print">
@@ -447,12 +450,14 @@
     {% endif %}
 
     <!-- ── 2. Quadrant chart ────────────────────────────────────── -->
+    {% if quadrant_b64 %}
     <section class="report-section quadrant-section">
       <h2 class="section-heading">Deal Quadrant Analysis</h2>
       <div class="chart-body">
         <img class="chart-img" src="data:image/png;base64,{{ quadrant_b64 }}" alt="Strategic Fit vs Profitability">
       </div>
     </section>
+    {% endif %}
 
     <!-- ── 3. High-level summary ────────────────────────────────── -->
     <section class="report-section summary-section">
@@ -515,6 +520,7 @@
                 <span class="ai-flag">AI Updated — review &amp; edit</span>
               {% endif %}
             </label>
+            <div class="print-label print-only">Summary</div>
             <div>
               <textarea class="field-textarea summary-textarea"
                         data-field="summary">{{ item.summary_lines | join('\n') }}</textarea>
@@ -611,7 +617,8 @@
         });
       });
 
-      const today = new Date().toISOString().slice(0, 10);
+      // Use the report's canonical date (embedded at render time), not the client clock.
+      const today = document.body.dataset.reportDate || new Date().toISOString().slice(0, 10);
 
       try {
         const res  = await fetch('/save', {
