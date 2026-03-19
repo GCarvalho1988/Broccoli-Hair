@@ -1,0 +1,81 @@
+{
+  "_meta": {
+    "last_run_date": "2026-03-06"
+  },
+  "newcastle": {
+    "display_name": "Newcastle",
+    "summary_lines": [
+      "Newcastle tender re-released.",
+      "Previously this had been released and won by Sectra in December ’24.",
+      "AGFA challenged and caused the tender to drop.",
+      "New tender requirements are significantly more extensive and stringent.",
+      "Submission on September 2nd.",
+      "Waiting decision, expected ????..."
+    ],
+    "last_included_date": "2026-03-06"
+  },
+  "swash cloud renewal (pbr + ris, etc)": {
+    "display_name": "SWASH Cloud Renewal (PBR + RIS, etc)",
+    "summary_lines": [
+      "Held meeting with SWASH 15/07/2025",
+      "SWASH looking to:"
+    ],
+    "last_included_date": "2026-03-06"
+  },
+  "ireland (digital pathology national tender – dell/pfh/leica bid)": {
+    "display_name": "Ireland (Digital Pathology National Tender – Dell/PFH/Leica Bid)",
+    "summary_lines": [
+      "National pathology solution to be deployed phased across 40+ Labs in Southern Ireland",
+      "NIMIS (National Radiology system, delivered by Change/Optum) is currently not expected to go to tender soon, despite questions about validity and legality of the extensions – they’ve been there for 15 years and the suggestion is that they should have gone to tender.",
+      "PIN released – expected to have heavy on-prem focus"
+    ],
+    "last_included_date": "2026-03-06"
+  },
+  "north central london (radiology)": {
+    "display_name": "North Central London (Radiology)",
+    "summary_lines": [
+      "Sectra secured opportunity, beating AGFA and Philips.",
+      "Covers 7 NHS Trusts (4 Sectra – Whittington, North Midds, Moorfields and GOSH; 3 Non-Sectra – UCLH, Royal Free and RNOH).",
+      "Radiology + Breast Screening only for now.",
+      "Additional Ophthalmology VNA opportunity discussions ongoing with Kevan Turnbull (EA for Moorfields)",
+      "Additional options pricing provided, waiting for further updates from NCL.",
+      "Contract expected now by end of the year."
+    ],
+    "last_included_date": "2026-03-06"
+  },
+  "nel (barts health)": {
+    "display_name": "NEL (Barts Health)",
+    "summary_lines": [
+      "Barts Health contract expiring next year.",
+      "Evaluating options to join NEL Sectra One Cloud ASAP – considering Hybrid Cloud options ahead of a merge.",
+      "Barts evaluating 1-year migration option with hardware in situ, plus 4.5 year contract to join NEL Sectra One Cloud."
+    ],
+    "last_included_date": "2026-03-06"
+  },
+  "royal marsden sectra one cloud refresh + vna deployment": {
+    "display_name": "Royal Marsden Sectra One Cloud Refresh + VNA Deployment",
+    "summary_lines": [
+      "Royal Marsden need a HW Refresh in 2026.",
+      "Currently Customer provided HW – wanting to evaluate options between doing an Customer on-premises refresh, a Customer provided cloud refresh or a Sectra One Cloud refresh for the remainder of the contract period."
+    ],
+    "last_included_date": "2026-03-06"
+  },
+  "north east and north cumbria digital pathology (nenc, formally neca)": {
+    "display_name": "North East and North Cumbria Digital Pathology (NENC, formally NECA)",
+    "summary_lines": [
+      "The region, formerly known as NECA, has gone out to tender for a new Digital Pathology solution.",
+      "Currently a Sectra DPAT site comprising the following Trusts:",
+      "County Durham and Darlington NHS Foundation Trust",
+      "Gateshead Health NHS Foundation Trust",
+      "Newcastle Upon Tyne Hospitals NHS Foundation Trust",
+      "North Tees and Hartlepool NHS Foundation Trust",
+      "South Tees Hospitals NHS Foundation Trust",
+      "Northumbria Healthcare NHS Foundation Trust",
+      "North Cumbria Integrated Care NHS Foundation Trust",
+      "The consortium is currently on customer-provided hardware and was mandated to retender despite being broadly satisfied with Sectra’s existing service.",
+      "This was Sectra UK’s first live DPAT site (October 2019) and was very competitively priced at the time.",
+      "A significant price increase is expected, but we have proactively aligned expectations with the customer and shared indicative business pricing earlier this year."
+    ],
+    "last_included_date": "2026-03-06"
+  }
+}
