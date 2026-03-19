@@ -96,11 +96,15 @@ RULES:
 
     message = client.messages.create(
         model=MODEL,
-        max_tokens=8000,
+        max_tokens=10000,
         messages=[{"role": "user", "content": prompt}]
     )
 
-    return _parse_response(message.content[0].text, deals, history)
+    if not message.content:
+        print("Empty response from AI")
+        return _empty_result(deals, history)
+    raw = message.content[0].text
+    return _parse_response(raw, deals, history)
 
 
 def _format_deals(deals: list[dict], history: dict) -> str:
@@ -132,7 +136,7 @@ def _format_summaries(deals: list[dict], history: dict) -> str:
 def _parse_response(raw: str, deals: list[dict], history: dict) -> dict:
     """Parse the JSON response, falling back gracefully on errors."""
     raw = re.sub(r"^```(?:json)?\s*", "", raw.strip())
-    raw = re.sub(r"\s*```$", "", raw.strip())
+    raw = re.sub(r"\s*```$", "", raw)
 
     try:
         data = json.loads(raw)
