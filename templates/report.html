@@ -6,36 +6,45 @@
   <title>Sales &amp; Marketing Weekly Report — Week {{ fy_week }} — {{ report_date }}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     /* ─── Reset & base ─────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --navy:      #1B3A6B;
-      --navy-mid:  #2a5298;
-      --navy-lt:   #e8edf5;
-      --navy-xs:   #f4f6fb;
-      --body:      #2c3545;
-      --muted:     #6b7280;
-      --border:    #dce3ed;
+      --s-navy:    #004688;
+      --s-deep:    #003260;
+      --s-mid:     #00548E;
+      --s-cyan:    #0A93CD;
+      --s-light:   #7AAADA;
+      --s-pale:    #D2E0FA;
+      --s-palest:  #EEF4FB;
+      --s-orange:  #F58025;
+      --s-grey:    #939598;
       --white:     #ffffff;
-      --ai-flag:   #b45309;
-      --ai-bg:     #fef3c7;
-      --excluded-bg: #f9f9f9;
+      --body:      #1e2d3d;
+      --muted:     #5a6a7a;
+      --border:    #c5d5e8;
+      --ai-flag:   #c05c00;
+      --ai-bg:     #fff3e0;
+      --excluded-op: 0.35;
 
-      --font-display: 'Cormorant Garamond', Georgia, serif;
-      --font-body:    'DM Sans', system-ui, sans-serif;
-      --page-width:   900px;
-      --section-gap:  2.5rem;
+      --font-head: 'Barlow Condensed', Arial Narrow, sans-serif;
+      --font-body: 'Barlow', Arial, sans-serif;
+      --page-width: 920px;
+      --section-gap: 2rem;
     }
 
-    html { font-size: 15px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    html {
+      font-size: 15px;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
 
     body {
       font-family: var(--font-body);
       color: var(--body);
-      background: #f0f2f7;
+      background: #e8f0f8;
       min-height: 100vh;
     }
 
@@ -44,70 +53,88 @@
       position: fixed;
       top: 0; left: 0; right: 0;
       z-index: 100;
-      background: var(--navy);
-      border-bottom: 2px solid var(--navy-mid);
-      padding: 0.65rem 1.5rem;
+      background: var(--s-deep);
+      border-bottom: 2px solid var(--s-orange);
+      padding: 0.6rem 1.5rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 1rem;
-      box-shadow: 0 2px 12px rgba(27,58,107,0.25);
+      box-shadow: 0 2px 14px rgba(0,50,96,0.40);
     }
-    .toolbar-brand {
-      font-family: var(--font-display);
-      font-size: 1.05rem;
-      font-weight: 600;
-      color: rgba(255,255,255,0.9);
-      letter-spacing: 0.04em;
+
+    .toolbar-left { display: flex; align-items: center; gap: 0.85rem; }
+
+    .toolbar-wordmark {
+      font-family: var(--font-head);
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--white);
     }
-    .toolbar-brand em {
-      font-style: normal;
+
+    .toolbar-divider {
+      width: 1px; height: 1rem;
+      background: rgba(255,255,255,0.2);
+    }
+
+    .toolbar-sub {
+      font-family: var(--font-head);
+      font-size: 0.75rem;
+      font-weight: 400;
+      letter-spacing: 0.06em;
       color: rgba(255,255,255,0.5);
-      font-weight: 300;
-      margin: 0 0.5rem;
     }
-    .toolbar-date {
-      font-size: 0.8rem;
-      color: rgba(255,255,255,0.55);
-      font-weight: 300;
-      letter-spacing: 0.03em;
+
+    .toolbar-week {
+      font-family: var(--font-head);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: var(--s-orange);
+      text-transform: uppercase;
     }
-    .toolbar-actions {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
+
+    .toolbar-actions { display: flex; align-items: center; gap: 0.75rem; }
+
     .btn {
-      font-family: var(--font-body);
-      font-size: 0.8rem;
-      font-weight: 500;
-      letter-spacing: 0.04em;
-      padding: 0.45rem 1.1rem;
-      border-radius: 4px;
+      font-family: var(--font-head);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.42rem 1.1rem;
+      border-radius: 2px;
       border: 1.5px solid transparent;
       cursor: pointer;
       transition: opacity 0.15s, transform 0.1s;
     }
     .btn:active { transform: scale(0.97); }
-    .btn:disabled { opacity: 0.5; cursor: default; }
+    .btn:disabled { opacity: 0.45; cursor: default; }
+
     .btn--regenerate {
       background: transparent;
-      color: rgba(255,255,255,0.85);
-      border-color: rgba(255,255,255,0.35);
-    }
-    .btn--regenerate:hover:not(:disabled) { background: rgba(255,255,255,0.1); }
-    .btn--finalise {
-      background: var(--white);
-      color: var(--navy);
+      color: rgba(255,255,255,0.8);
       border-color: rgba(255,255,255,0.3);
     }
+    .btn--regenerate:hover:not(:disabled) { background: rgba(255,255,255,0.1); }
+
+    .btn--finalise {
+      background: var(--s-orange);
+      color: var(--white);
+      border-color: var(--s-orange);
+      box-shadow: 0 2px 8px rgba(245,128,37,0.35);
+    }
     .btn--finalise:hover:not(:disabled) { opacity: 0.9; }
+
     #actionStatus {
-      font-size: 0.78rem;
+      font-size: 0.75rem;
       font-weight: 500;
       min-width: 6rem;
       text-align: right;
-      color: rgba(255,255,255,0.7);
+      color: rgba(255,255,255,0.6);
+      font-family: var(--font-body);
     }
     #actionStatus.ok  { color: #6ee7b7; }
     #actionStatus.err { color: #fca5a5; }
@@ -116,112 +143,136 @@
     .page {
       max-width: var(--page-width);
       margin: 0 auto;
-      padding: 5.5rem 1.5rem 4rem;
+      padding: 5rem 1.5rem 4rem;
     }
 
     /* ─── Report header ────────────────────────────────────────────── */
     .report-header {
-      background: var(--navy);
+      background: linear-gradient(135deg, var(--s-deep) 0%, var(--s-navy) 55%, var(--s-mid) 100%);
       color: var(--white);
       padding: 2.25rem 2.5rem 2rem;
       margin-bottom: var(--section-gap);
       position: relative;
-      border-radius: 3px;
+      border-radius: 2px;
       overflow: hidden;
     }
-    .report-header::before {
+
+    /* Sectra bubble motif */
+    .report-header::after {
       content: '';
       position: absolute;
-      top: 0; right: 0; bottom: 0;
-      width: 220px;
-      background: linear-gradient(135deg, transparent, rgba(255,255,255,0.04));
+      bottom: -20%; right: -3%;
+      width: 52%; height: 160%;
+      background:
+        radial-gradient(circle at 82% 82%, rgba(10,147,205,0.22) 65px, transparent 66px),
+        radial-gradient(circle at 60% 72%, rgba(10,147,205,0.16) 95px, transparent 96px),
+        radial-gradient(circle at 78% 52%, rgba(10,147,205,0.12) 50px, transparent 51px),
+        radial-gradient(circle at 96% 52%, rgba(10,147,205,0.18) 120px, transparent 121px),
+        radial-gradient(circle at 48% 88%, rgba(10,147,205,0.09) 40px, transparent 41px),
+        radial-gradient(circle at 68% 35%, rgba(10,147,205,0.07) 30px, transparent 31px);
       pointer-events: none;
     }
-    .report-header-brand {
-      font-family: var(--font-display);
-      font-size: 0.75rem;
+
+    .report-header-eyebrow {
+      font-family: var(--font-head);
+      font-size: 0.66rem;
       font-weight: 600;
-      letter-spacing: 0.25em;
+      letter-spacing: 0.22em;
       text-transform: uppercase;
-      color: rgba(255,255,255,0.55);
+      color: rgba(255,255,255,0.45);
       margin-bottom: 0.6rem;
     }
-    .report-header-brand span { color: rgba(255,255,255,0.3); margin: 0 0.5rem; }
+
     .report-header-title {
-      font-family: var(--font-display);
+      font-family: var(--font-head);
       font-size: 2rem;
       font-weight: 700;
-      line-height: 1.15;
-      margin-bottom: 0.4rem;
+      letter-spacing: 0.02em;
+      line-height: 1.1;
+      color: var(--white);
+      margin-bottom: 0.35rem;
+      position: relative;
+      z-index: 1;
     }
+
+    .report-header-title em {
+      color: var(--s-orange);
+      font-style: normal;
+    }
+
     .report-header-date {
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-weight: 300;
-      color: rgba(255,255,255,0.6);
-      letter-spacing: 0.04em;
+      color: rgba(255,255,255,0.55);
+      letter-spacing: 0.05em;
     }
 
     /* ─── Section wrapper ──────────────────────────────────────────── */
     .report-section {
       background: var(--white);
-      border-radius: 3px;
+      border-radius: 2px;
       margin-bottom: var(--section-gap);
       overflow: hidden;
-      box-shadow: 0 1px 4px rgba(27,58,107,0.08);
+      box-shadow: 0 1px 6px rgba(0,70,136,0.09);
+      border-top: 3px solid var(--s-orange);
     }
+
     .section-heading {
-      font-family: var(--font-display);
-      font-size: 0.65rem;
-      font-weight: 600;
+      font-family: var(--font-head);
+      font-size: 0.66rem;
+      font-weight: 700;
       letter-spacing: 0.2em;
       text-transform: uppercase;
       color: var(--white);
-      background: var(--navy);
-      padding: 0.65rem 1.5rem;
+      background: var(--s-navy);
+      padding: 0.6rem 1.5rem;
     }
-    /* Hidden sections (shown only after Regenerate) */
+
+    /* Hidden sections (shown after Regenerate) */
     .section--hidden { display: none !important; }
 
-    /* ─── Dashboard image ──────────────────────────────────────────── */
+    /* ─── Dashboard & chart ─────────────────────────────────────────── */
     .dashboard-img { display: block; width: 100%; height: auto; }
-
-    /* ─── Quadrant chart ───────────────────────────────────────────── */
     .chart-body { padding: 0.5rem 1.5rem 1rem; }
     .chart-img {
-      display: block;
-      width: 100%;
-      max-width: 700px;
-      height: auto;
-      margin: 0 auto;
+      display: block; width: 100%; max-width: 700px;
+      height: auto; margin: 0 auto;
     }
 
-    /* ─── High-level summary table ─────────────────────────────────── */
+    /* ─── High-level summary table ──────────────────────────────────── */
     .summary-table { width: 100%; border-collapse: collapse; }
+
     .summary-table th {
-      font-size: 0.68rem;
-      font-weight: 600;
-      letter-spacing: 0.1em;
+      font-family: var(--font-head);
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
       color: var(--muted);
-      padding: 0.7rem 1rem 0.6rem;
+      padding: 0.65rem 1rem;
       border-bottom: 1.5px solid var(--border);
       text-align: left;
     }
+
     .summary-table td {
-      padding: 0.7rem 1rem;
+      padding: 0.65rem 1rem;
       font-size: 0.875rem;
+      font-weight: 300;
       border-bottom: 1px solid var(--border);
       vertical-align: top;
     }
+
     .summary-table tr:last-child td { border-bottom: none; }
-    .summary-table tr:nth-child(even) td { background: var(--navy-xs); }
+    .summary-table tr:nth-child(even) td { background: var(--s-palest); }
+
     .deal-name-col {
-      font-weight: 500;
-      color: var(--navy);
+      font-weight: 600;
+      color: var(--s-navy);
       white-space: nowrap;
       width: 22%;
     }
-    .stage-col { width: 20%; }
+
+    .stage-col { width: 22%; }
     .forecast-col {
       text-align: right;
       white-space: nowrap;
@@ -230,102 +281,116 @@
       width: 12%;
     }
 
-    /* ─── Stage badge ──────────────────────────────────────────────── */
+    /* ─── Stage badge ───────────────────────────────────────────────── */
     .badge {
       display: inline-block;
-      font-size: 0.67rem;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      padding: 0.2em 0.6em;
-      border-radius: 3px;
+      font-family: var(--font-head);
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.2em 0.65em;
+      border-radius: 2px;
       color: #fff;
       white-space: nowrap;
       line-height: 1.5;
     }
     .badge--light { color: #3a2d00; }
 
-    /* ─── Detailed updates ─────────────────────────────────────────── */
+    /* ─── Detailed updates ──────────────────────────────────────────── */
     .deals-list { padding: 0 1.5rem 1.5rem; }
 
     .deal-block {
       border-bottom: 1px solid var(--border);
-      padding: 1.25rem 0;
+      padding: 1.2rem 0;
+      transition: opacity 0.2s;
     }
     .deal-block:last-child { border-bottom: none; }
 
-    /* Excluded state */
-    .deal-block--excluded {
-      opacity: 0.38;
-    }
-    .deal-block--excluded .field-textarea {
-      pointer-events: none;
-    }
+    .deal-block--excluded { opacity: var(--excluded-op); }
+    .deal-block--excluded .field-textarea { pointer-events: none; }
 
     .deal-header {
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      margin-bottom: 0.9rem;
+      margin-bottom: 0.85rem;
       flex-wrap: wrap;
     }
+
     .deal-title {
-      font-family: var(--font-display);
-      font-size: 1.15rem;
+      font-family: var(--font-head);
+      font-size: 1.1rem;
       font-weight: 700;
-      color: var(--navy);
+      letter-spacing: 0.01em;
+      color: var(--s-navy);
     }
-    /* Exclude checkbox control */
+
+    /* Orange left-tick on mentioned deals */
+    .deal-block[data-mentioned="true"] .deal-title::before {
+      content: '';
+      display: inline-block;
+      width: 3px; height: 0.9em;
+      background: var(--s-orange);
+      border-radius: 2px;
+      margin-right: 0.5rem;
+      vertical-align: middle;
+    }
+
     .exclude-control {
       margin-left: auto;
       display: flex;
       align-items: center;
       gap: 0.4rem;
-      font-size: 0.72rem;
-      font-weight: 500;
+      font-family: var(--font-head);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
       color: var(--muted);
-      letter-spacing: 0.04em;
       cursor: pointer;
       user-select: none;
     }
     .exclude-control input[type="checkbox"] {
-      width: 14px;
-      height: 14px;
+      width: 14px; height: 14px;
       cursor: pointer;
-      accent-color: var(--navy);
+      accent-color: var(--s-navy);
     }
 
     .deal-field {
       display: grid;
       grid-template-columns: 90px 1fr;
       gap: 0 0.75rem;
-      margin-bottom: 0.6rem;
+      margin-bottom: 0.55rem;
     }
+
     .field-label {
-      font-size: 0.67rem;
-      font-weight: 600;
-      letter-spacing: 0.1em;
+      font-family: var(--font-head);
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
       color: var(--muted);
-      padding-top: 0.4rem;
-      line-height: 1.3;
+      padding-top: 0.45rem;
     }
+
     .field-label .ai-flag {
       display: block;
       color: var(--ai-flag);
-      font-size: 0.6rem;
-      letter-spacing: 0.05em;
+      font-size: 0.58rem;
       margin-top: 0.2rem;
-      font-weight: 600;
+      font-weight: 700;
     }
+
     .field-textarea {
       font-family: var(--font-body);
-      font-size: 0.85rem;
+      font-size: 0.855rem;
       font-weight: 300;
-      line-height: 1.6;
+      line-height: 1.65;
       color: var(--body);
-      background: var(--navy-xs);
+      background: var(--s-palest);
       border: 1.5px solid var(--border);
-      border-radius: 3px;
+      border-radius: 2px;
       padding: 0.5rem 0.75rem;
       resize: none;
       overflow: hidden;
@@ -335,23 +400,24 @@
     }
     .field-textarea:focus {
       outline: none;
-      border-color: var(--navy-mid);
-      background: #fff;
+      border-color: var(--s-cyan);
+      background: var(--white);
     }
     .summary-textarea { min-height: 3rem; }
-    .ai-draft .field-textarea { border-color: #d97706; background: var(--ai-bg); }
+    .ai-draft .field-textarea { border-color: var(--s-orange); background: var(--ai-bg); }
 
-    /* ─── Upsell ───────────────────────────────────────────────────── */
+    /* ─── Upsell ─────────────────────────────────────────────────────── */
     .upsell-body { padding: 0.75rem 1.5rem 1rem; }
+
     .upsell-textarea {
       font-family: var(--font-body);
       font-size: 0.875rem;
       font-weight: 300;
       line-height: 1.7;
       color: var(--body);
-      background: var(--navy-xs);
+      background: var(--s-palest);
       border: 1.5px solid var(--border);
-      border-radius: 3px;
+      border-radius: 2px;
       padding: 0.6rem 0.85rem;
       resize: none;
       overflow: hidden;
@@ -360,11 +426,11 @@
     }
     .upsell-textarea:focus {
       outline: none;
-      border-color: var(--navy-mid);
-      background: #fff;
+      border-color: var(--s-cyan);
+      background: var(--white);
     }
 
-    /* ─── Print mode ───────────────────────────────────────────────── */
+    /* ─── Print ──────────────────────────────────────────────────────── */
     .print-only { display: none; }
 
     @media print {
@@ -375,13 +441,12 @@
       .no-print  { display: none !important; }
       .section--hidden { display: none !important; }
 
-      /* Excluded deals are fully hidden on print */
       .deal-block--excluded { display: none !important; }
 
       .report-header {
         border-radius: 0;
-        margin-bottom: 1.2rem;
-        padding: 1.4rem 1.5rem 1.1rem;
+        margin-bottom: 1rem;
+        padding: 1.3rem 1.5rem 1rem;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
@@ -391,17 +456,18 @@
         box-shadow: none;
         border-radius: 0;
         border: 1px solid var(--border);
-        margin-bottom: 1.2rem;
+        border-top: 3px solid var(--s-orange);
+        margin-bottom: 1.1rem;
         break-inside: avoid;
       }
 
       .deals-list { padding: 0 1rem 0.5rem; }
-      .deal-block { padding: 0.9rem 0; break-inside: avoid; }
-      .deal-title  { font-size: 1rem; }
+      .deal-block { padding: 0.85rem 0; break-inside: avoid; }
+      .deal-title { font-size: 0.95rem; }
 
-      .field-textarea { display: none !important; }
+      .field-textarea  { display: none !important; }
       .upsell-textarea { display: none !important; }
-      .print-only { display: block !important; }
+      .print-only      { display: block !important; }
 
       .print-content {
         font-size: 9pt;
@@ -414,8 +480,9 @@
 
       .field-label { display: none !important; }
       .print-label {
+        font-family: var(--font-head);
         font-size: 7pt;
-        font-weight: 600;
+        font-weight: 700;
         letter-spacing: 0.1em;
         text-transform: uppercase;
         color: var(--muted);
@@ -434,11 +501,14 @@
 </head>
 <body data-report-date="{{ report_date | e }}">
 
-  <!-- ── Toolbar (hidden on print) ──────────────────────────────── -->
+  <!-- ── Toolbar ──────────────────────────────────────────────────── -->
   <div class="toolbar no-print">
-    <div>
-      <div class="toolbar-brand">SECTRA UK&amp;I <em>·</em> Sales &amp; Marketing — Week {{ fy_week }}</div>
-      <div class="toolbar-date">{{ report_date }}</div>
+    <div class="toolbar-left">
+      <div class="toolbar-wordmark">Sectra</div>
+      <div class="toolbar-divider"></div>
+      <div class="toolbar-sub">Sales &amp; Marketing · UK&amp;I</div>
+      <div class="toolbar-divider"></div>
+      <div class="toolbar-week">Week {{ fy_week }}</div>
     </div>
     <div class="toolbar-actions">
       <span id="actionStatus"></span>
@@ -447,13 +517,13 @@
     </div>
   </div>
 
-  <!-- ── Page ───────────────────────────────────────────────────── -->
+  <!-- ── Page ─────────────────────────────────────────────────────── -->
   <div class="page">
 
     <!-- Report header -->
     <header class="report-header">
-      <div class="report-header-brand">Sectra UK&amp;I <span>|</span> Sales &amp; Marketing</div>
-      <h1 class="report-header-title">Sales &amp; Marketing Weekly Report — Week {{ fy_week }}</h1>
+      <div class="report-header-eyebrow">Sectra UK&amp;I &nbsp;·&nbsp; Sales &amp; Marketing</div>
+      <h1 class="report-header-title">S&amp;M Weekly Report &mdash; <em>Week {{ fy_week }}</em></h1>
       <p class="report-header-date">{{ report_date }}</p>
     </header>
 
@@ -475,7 +545,7 @@
     </section>
     {% endif %}
 
-    <!-- ── 3. High-level summary (hidden until Regenerate) ──────── -->
+    <!-- ── 3. High-level summary (hidden until Regenerate) ───────── -->
     <section class="report-section summary-section section--hidden" id="highLevelSection">
       <h2 class="section-heading">High-Level Summary</h2>
       <table class="summary-table">
@@ -515,14 +585,14 @@
             </label>
           </div>
 
-          <!-- Summary field -->
+          <!-- Summary -->
           <div class="deal-field{% if item.summary_action in ('new', 'updated') %} ai-draft{% endif %}">
             <label class="field-label no-print">
               Summary
               {% if item.summary_action == 'new' %}
-                <span class="ai-flag">AI Draft — review &amp; edit</span>
+                <span class="ai-flag">AI Draft</span>
               {% elif item.summary_action == 'updated' %}
-                <span class="ai-flag">AI Updated — review &amp; edit</span>
+                <span class="ai-flag">AI Updated</span>
               {% endif %}
             </label>
             <div class="print-label print-only">Summary</div>
@@ -535,7 +605,7 @@
             </div>
           </div>
 
-          <!-- Update field -->
+          <!-- Update -->
           <div class="deal-field">
             <label class="field-label no-print">Update</label>
             <div class="print-label print-only">Update</div>
@@ -553,7 +623,7 @@
       </div>
     </section>
 
-    <!-- ── 5. Upsell & other updates (always shown, editable) ───── -->
+    <!-- ── 5. Upsell & other updates ────────────────────────────── -->
     <section class="report-section upsell-section">
       <h2 class="section-heading">Upsell &amp; Other Updates</h2>
       <div class="upsell-body">
@@ -567,13 +637,12 @@
 
   </div><!-- /page -->
 
-  <!-- Stage colours passed to JS for dynamic High Level Summary rendering -->
   <script>
     const stageColours = {{ stage_colours | tojson }};
   </script>
 
   <script>
-    /* ── Auto-resize all textareas to fit content ──────────────────── */
+    /* ── Auto-resize textareas ──────────────────────────────────────── */
     function autoResize(ta) {
       ta.style.height = 'auto';
       ta.style.height = ta.scrollHeight + 'px';
@@ -586,10 +655,9 @@
     }
     initAutoResize();
 
-    /* ── Exclude checkbox behaviour ────────────────────────────────── */
+    /* ── Exclude checkbox behaviour ─────────────────────────────────── */
     function initExclude() {
       document.querySelectorAll('.exclude-checkbox').forEach(cb => {
-        // Apply initial state
         cb.closest('.deal-block').classList.toggle('deal-block--excluded', cb.checked);
         cb.addEventListener('change', () => {
           cb.closest('.deal-block').classList.toggle('deal-block--excluded', cb.checked);
@@ -598,7 +666,7 @@
     }
     initExclude();
 
-    /* ── Collect current deal state from DOM ───────────────────────── */
+    /* ── Collect current deal state from DOM ────────────────────────── */
     function collectDeals() {
       const deals = [];
       document.querySelectorAll('.deal-block').forEach(block => {
@@ -616,23 +684,22 @@
       return deals;
     }
 
-    /* ── Escape HTML for dynamic injection ────────────────────────── */
+    /* ── Escape HTML ────────────────────────────────────────────────── */
     function esc(s) {
       return String(s)
         .replace(/&/g,'&amp;').replace(/</g,'&lt;')
         .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
-    /* ── Regenerate ────────────────────────────────────────────────── */
+    /* ── Regenerate ─────────────────────────────────────────────────── */
     async function regenerate() {
       const btn    = document.getElementById('regenerateBtn');
       const status = document.getElementById('actionStatus');
+      const upsellTA = document.getElementById('upsellTextarea');
 
       btn.disabled = true;
       status.textContent = 'Regenerating… ~30s';
       status.className = '';
-
-      const upsellTA = document.getElementById('upsellTextarea');
 
       try {
         const res = await fetch('/regenerate', {
@@ -648,9 +715,7 @@
 
         /* Update deal textareas */
         const blockMap = {};
-        document.querySelectorAll('.deal-block').forEach(b => {
-          blockMap[b.dataset.deal] = b;
-        });
+        document.querySelectorAll('.deal-block').forEach(b => { blockMap[b.dataset.deal] = b; });
         (data.deal_updates || []).forEach(item => {
           const block = blockMap[item.deal];
           if (!block) return;
@@ -660,16 +725,16 @@
           if (uTA) uTA.value = (item.update_lines  || []).join('\n');
         });
 
-        /* Update upsell textarea */
+        /* Update upsell */
         if (upsellTA && data.upsell_items) {
           upsellTA.value = data.upsell_items.join('\n');
         }
 
-        /* Re-fit all textareas to new content */
+        /* Re-fit all textareas */
         initAutoResize();
 
         /* Populate & reveal High Level Summary */
-        const tbody  = document.getElementById('summaryTbody');
+        const tbody   = document.getElementById('summaryTbody');
         const section = document.getElementById('highLevelSection');
         if (tbody && data.high_level_summary) {
           tbody.innerHTML = (data.high_level_summary || []).map(item => {
@@ -700,16 +765,15 @@
       }
     }
 
-    /* ── Finalise (save + print) ───────────────────────────────────── */
+    /* ── Finalise (save + print) ────────────────────────────────────── */
     async function finalise() {
       const btn    = document.getElementById('finaliseBtn');
       const status = document.getElementById('actionStatus');
+      const today  = document.body.dataset.reportDate || new Date().toISOString().slice(0, 10);
 
       btn.disabled = true;
       status.textContent = 'Saving…';
       status.className = '';
-
-      const today = document.body.dataset.reportDate || new Date().toISOString().slice(0, 10);
 
       try {
         const res = await fetch('/save', {
@@ -730,34 +794,25 @@
       }
     }
 
-    /* ── Before print: sync textareas → print-only divs ───────────── */
+    /* ── Before print: sync textareas → print divs ──────────────────── */
     function syncPrintDivs() {
       document.querySelectorAll('.deal-block').forEach(block => {
         const sTA = block.querySelector('.summary-textarea');
         const uTA = block.querySelector('.update-textarea');
         const sP  = block.querySelector('[data-print-for="summary"]');
         const uP  = block.querySelector('[data-print-for="update"]');
-
-        if (sTA && sP) {
-          sP.innerHTML = sTA.value.split('\n').filter(l => l.trim())
-            .map(l => `<p>${esc(l)}</p>`).join('');
-        }
-        if (uTA && uP) {
-          uP.innerHTML = uTA.value.split('\n').filter(l => l.trim())
-            .map(l => `<p>${esc(l)}</p>`).join('');
-        }
+        if (sTA && sP) sP.innerHTML = sTA.value.split('\n').filter(l => l.trim()).map(l => `<p>${esc(l)}</p>`).join('');
+        if (uTA && uP) uP.innerHTML = uTA.value.split('\n').filter(l => l.trim()).map(l => `<p>${esc(l)}</p>`).join('');
       });
-
       const upsellTA    = document.getElementById('upsellTextarea');
       const upsellPrint = document.getElementById('upsellPrint');
       if (upsellTA && upsellPrint) {
-        upsellPrint.innerHTML = upsellTA.value.split('\n').filter(l => l.trim())
-          .map(l => `<p>${esc(l)}</p>`).join('');
+        upsellPrint.innerHTML = upsellTA.value.split('\n').filter(l => l.trim()).map(l => `<p>${esc(l)}</p>`).join('');
       }
     }
 
     window.addEventListener('beforeprint', syncPrintDivs);
-    window.addEventListener('afterprint',  () => {
+    window.addEventListener('afterprint', () => {
       const btn = document.getElementById('finaliseBtn');
       if (btn) btn.disabled = false;
     });

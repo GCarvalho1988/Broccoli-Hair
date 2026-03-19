@@ -26,11 +26,11 @@ def _report_date_str() -> str:
 
 
 def _fy_week(d: date = None) -> int:
-    """Financial year week number (FY starts 1 April)."""
+    """Financial year week number (FY starts 1 May)."""
     if d is None:
         d = date.today()
-    fy_start_year = d.year if d.month >= 4 else d.year - 1
-    return (d - date(fy_start_year, 4, 1)).days // 7 + 1
+    fy_start_year = d.year if d.month >= 5 else d.year - 1
+    return (d - date(fy_start_year, 5, 1)).days // 7 + 1
 
 
 def _enrich_stage(items: list[dict], deal_stage_map: dict) -> None:
