@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weekly Pipeline Report — {{ report_date }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+  <style>
+    /* ─── Reset & base ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:      #1B3A6B;
+      --navy-mid:  #2a5298;
+      --navy-lt:   #e8edf5;
+      --navy-xs:   #f4f6fb;
+      --body:      #2c3545;
+      --muted:     #6b7280;
+      --border:    #dce3ed;
+      --white:     #ffffff;
+      --ai-flag:   #b45309;
+      --ai-bg:     #fef3c7;
+      --save-ok:   #166534;
+      --save-err:  #991b1b;
+
+      /* Stage colours */
+      --s0: #888888; --s1: #E87722; --s2: #F5C400;
+      --s3: #2E7D32; --s4: #00838F; --s5: #1565C0; --s6: #6A1B9A;
+
+      --font-display: 'Cormorant Garamond', Georgia, serif;
+      --font-body:    'DM Sans', system-ui, sans-serif;
+      --page-width:   900px;
+      --section-gap:  2.5rem;
+    }
+
+    html { font-size: 15px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+    body {
+      font-family: var(--font-body);
+      color: var(--body);
+      background: #f0f2f7;
+      min-height: 100vh;
+    }
+
+    /* ─── Toolbar ───────────────────────────────────────────────────── */
+    .toolbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: var(--navy);
+      border-bottom: 2px solid var(--navy-mid);
+      padding: 0.65rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      box-shadow: 0 2px 12px rgba(27,58,107,0.25);
+    }
+    .toolbar-brand {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.9);
+      letter-spacing: 0.04em;
+    }
+    .toolbar-brand em {
+      font-style: normal;
+      color: rgba(255,255,255,0.5);
+      font-weight: 300;
+      margin: 0 0.5rem;
+    }
+    .toolbar-date {
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.55);
+      font-weight: 300;
+      letter-spacing: 0.03em;
+    }
+    .toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .btn {
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      padding: 0.45rem 1.1rem;
+      border-radius: 4px;
+      border: 1.5px solid transparent;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn--save {
+      background: var(--white);
+      color: var(--navy);
+      border-color: rgba(255,255,255,0.3);
+    }
+    .btn--save:hover { opacity: 0.9; }
+    .btn--save:disabled { opacity: 0.5; cursor: default; }
+    .btn--print {
+      background: transparent;
+      color: rgba(255,255,255,0.85);
+      border-color: rgba(255,255,255,0.35);
+    }
+    .btn--print:hover { background: rgba(255,255,255,0.1); }
+    #saveStatus {
+      font-size: 0.78rem;
+      font-weight: 500;
+      min-width: 4rem;
+      text-align: right;
+      color: rgba(255,255,255,0.7);
+    }
+    #saveStatus.ok  { color: #6ee7b7; }
+    #saveStatus.err { color: #fca5a5; }
+
+    /* ─── Page wrapper ─────────────────────────────────────────────── */
+    .page {
+      max-width: var(--page-width);
+      margin: 0 auto;
+      padding: 5.5rem 1.5rem 4rem;
+    }
+
+    /* ─── Report header ────────────────────────────────────────────── */
+    .report-header {
+      background: var(--navy);
+      color: var(--white);
+      padding: 2.25rem 2.5rem 2rem;
+      margin-bottom: var(--section-gap);
+      position: relative;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .report-header::before {
+      content: '';
+      position: absolute;
+      top: 0; right: 0; bottom: 0;
+      width: 220px;
+      background: linear-gradient(135deg, transparent, rgba(255,255,255,0.04));
+      pointer-events: none;
+    }
+    .report-header-brand {
+      font-family: var(--font-display);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.55);
+      margin-bottom: 0.6rem;
+    }
+    .report-header-brand span {
+      color: rgba(255,255,255,0.3);
+      margin: 0 0.5rem;
+    }
+    .report-header-title {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      line-height: 1.15;
+      margin-bottom: 0.4rem;
+    }
+    .report-header-date {
+      font-size: 0.85rem;
+      font-weight: 300;
+      color: rgba(255,255,255,0.6);
+      letter-spacing: 0.04em;
+    }
+
+    /* ─── Section wrapper ──────────────────────────────────────────── */
+    .report-section {
+      background: var(--white);
+      border-radius: 3px;
+      margin-bottom: var(--section-gap);
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(27,58,107,0.08);
+    }
+    .section-heading {
+      font-family: var(--font-display);
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--white);
+      background: var(--navy);
+      padding: 0.65rem 1.5rem;
+    }
+
+    /* ─── Dashboard image ──────────────────────────────────────────── */
+    .dashboard-img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    /* ─── Quadrant chart ───────────────────────────────────────────── */
+    .chart-body { padding: 0.5rem 1.5rem 1rem; }
+    .chart-img {
+      display: block;
+      width: 100%;
+      max-width: 700px;
+      height: auto;
+      margin: 0 auto;
+    }
+
+    /* ─── High-level summary table ─────────────────────────────────── */
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .summary-table th {
+      font-family: var(--font-body);
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 0.7rem 1rem 0.6rem;
+      border-bottom: 1.5px solid var(--border);
+      text-align: left;
+    }
+    .summary-table td {
+      padding: 0.7rem 1rem;
+      font-size: 0.875rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    .summary-table tr:last-child td { border-bottom: none; }
+    .summary-table tr:nth-child(even) td { background: var(--navy-xs); }
+    .deal-name-col {
+      font-weight: 500;
+      color: var(--navy);
+      white-space: nowrap;
+      width: 22%;
+    }
+    .stage-col { width: 20%; }
+    .forecast-col {
+      text-align: right;
+      white-space: nowrap;
+      color: var(--body);
+      font-variant-numeric: tabular-nums;
+      font-size: 0.83rem;
+      width: 12%;
+    }
+
+    /* ─── Stage badge ──────────────────────────────────────────────── */
+    .badge {
+      display: inline-block;
+      font-size: 0.67rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      padding: 0.2em 0.6em;
+      border-radius: 3px;
+      color: #fff;
+      white-space: nowrap;
+      line-height: 1.5;
+    }
+    /* Light badge for yellow */
+    .badge--light { color: #3a2d00; }
+
+    /* ─── Detailed updates ─────────────────────────────────────────── */
+    .deals-list { padding: 0 1.5rem 1.5rem; }
+    .deal-block {
+      border-bottom: 1px solid var(--border);
+      padding: 1.25rem 0;
+    }
+    .deal-block:last-child { border-bottom: none; }
+    .deal-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.9rem;
+    }
+    .deal-title {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--navy);
+    }
+    .deal-field {
+      display: grid;
+      grid-template-columns: 90px 1fr;
+      gap: 0 0.75rem;
+      margin-bottom: 0.6rem;
+    }
+    .field-label {
+      font-size: 0.67rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding-top: 0.4rem;
+      line-height: 1.3;
+    }
+    .field-label .ai-flag {
+      display: block;
+      color: var(--ai-flag);
+      font-size: 0.6rem;
+      letter-spacing: 0.05em;
+      margin-top: 0.2rem;
+      font-weight: 600;
+    }
+    .field-textarea {
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      font-weight: 300;
+      line-height: 1.6;
+      color: var(--body);
+      background: var(--navy-xs);
+      border: 1.5px solid var(--border);
+      border-radius: 3px;
+      padding: 0.5rem 0.75rem;
+      resize: vertical;
+      min-height: 3.5rem;
+      width: 100%;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .field-textarea:focus {
+      outline: none;
+      border-color: var(--navy-mid);
+      background: #fff;
+    }
+    .summary-textarea { min-height: 5.5rem; }
+    .ai-draft .field-textarea {
+      border-color: #d97706;
+      background: var(--ai-bg);
+    }
+
+    /* ─── Upsell ───────────────────────────────────────────────────── */
+    .upsell-body { padding: 1rem 1.5rem 1.25rem; }
+    .upsell-list {
+      list-style: none;
+      padding: 0;
+    }
+    .upsell-list li {
+      font-size: 0.875rem;
+      line-height: 1.6;
+      padding: 0.35rem 0 0.35rem 1.25rem;
+      position: relative;
+      border-bottom: 1px solid var(--navy-xs);
+      font-weight: 300;
+    }
+    .upsell-list li:last-child { border-bottom: none; }
+    .upsell-list li::before {
+      content: '–';
+      position: absolute;
+      left: 0;
+      color: var(--navy);
+      font-weight: 600;
+    }
+
+    /* ─── Print mode ───────────────────────────────────────────────── */
+    .print-only { display: none; }
+
+    @media print {
+      body { background: #fff; font-size: 10pt; }
+      .page { padding: 0; max-width: 100%; }
+
+      .toolbar  { display: none !important; }
+      .no-print { display: none !important; }
+
+      .report-header {
+        border-radius: 0;
+        margin-bottom: 1.2rem;
+        padding: 1.4rem 1.5rem 1.1rem;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .report-header-title { font-size: 1.5rem; }
+
+      .report-section {
+        box-shadow: none;
+        border-radius: 0;
+        border: 1px solid var(--border);
+        margin-bottom: 1.2rem;
+        break-inside: avoid;
+      }
+
+      .deals-list { padding: 0 1rem 0.5rem; }
+      .deal-block { padding: 0.9rem 0; break-inside: avoid; }
+      .deal-title  { font-size: 1rem; }
+
+      /* Hide editable textareas; show pre-rendered print-only divs */
+      .field-textarea { display: none !important; }
+      .print-only { display: block !important; }
+      .print-content {
+        font-size: 9pt;
+        font-weight: 300;
+        line-height: 1.6;
+        color: var(--body);
+      }
+      .print-content p { margin: 0; }
+      .print-content p + p { margin-top: 0.2rem; }
+
+      .field-label { display: none !important; }
+      .print-label {
+        font-size: 7pt;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 0.2rem;
+      }
+
+      .dashboard-section { page-break-after: always; }
+      .summary-section   { page-break-before: always; }
+      .updates-section   { page-break-before: always; }
+
+      a { text-decoration: none; color: inherit; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Toolbar (hidden on print) ──────────────────────────────── -->
+  <div class="toolbar no-print">
+    <div>
+      <div class="toolbar-brand">SECTRA <em>·</em> Sales Intelligence</div>
+      <div class="toolbar-date">{{ report_date }}</div>
+    </div>
+    <div class="toolbar-actions">
+      <span id="saveStatus"></span>
+      <button id="saveBtn" class="btn btn--save" onclick="saveReport()">Save &amp; Publish</button>
+      <button class="btn btn--print" onclick="window.print()">Print to PDF</button>
+    </div>
+  </div>
+
+  <!-- ── Page ───────────────────────────────────────────────────── -->
+  <div class="page">
+
+    <!-- Report header -->
+    <header class="report-header">
+      <div class="report-header-brand">Sectra UK <span>|</span> Sales Manager Report</div>
+      <h1 class="report-header-title">Weekly Pipeline Report</h1>
+      <p class="report-header-date">{{ report_date }}</p>
+    </header>
+
+    <!-- ── 1. Dashboard screenshot ─────────────────────────────── -->
+    {% if dashboard_b64 %}
+    <section class="report-section dashboard-section">
+      <h2 class="section-heading">Pipeline Dashboard</h2>
+      <img class="dashboard-img" src="data:image/png;base64,{{ dashboard_b64 }}" alt="Smartsheet Sales Pipeline Dashboard">
+    </section>
+    {% endif %}
+
+    <!-- ── 2. Quadrant chart ────────────────────────────────────── -->
+    <section class="report-section quadrant-section">
+      <h2 class="section-heading">Deal Quadrant Analysis</h2>
+      <div class="chart-body">
+        <img class="chart-img" src="data:image/png;base64,{{ quadrant_b64 }}" alt="Strategic Fit vs Profitability">
+      </div>
+    </section>
+
+    <!-- ── 3. High-level summary ────────────────────────────────── -->
+    <section class="report-section summary-section">
+      <h2 class="section-heading">High-Level Summary</h2>
+      <table class="summary-table">
+        <thead>
+          <tr>
+            <th>Deal</th>
+            <th>Stage</th>
+            <th>Status</th>
+            <th class="forecast-col">Forecast</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in high_level_summary %}
+          <tr>
+            <td class="deal-name-col">{{ item.deal }}</td>
+            <td class="stage-col">
+              {%- set colour = stage_colours.get(item.stage_num, '#888888') -%}
+              {%- set light = (item.stage_num == '2') -%}
+              <span class="badge{% if light %} badge--light{% endif %}"
+                    style="background-color: {{ colour }}">
+                {{ item.stage }}
+              </span>
+            </td>
+            <td>{{ item.one_liner }}</td>
+            <td class="forecast-col">{{ item.forecast }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ── 4. Detailed updates ──────────────────────────────────── -->
+    <section class="report-section updates-section">
+      <h2 class="section-heading">Detailed Updates</h2>
+      <div class="deals-list">
+        {% for item in deal_updates %}
+        {%- set colour = stage_colours.get(item.stage_num, '#888888') -%}
+        {%- set light = (item.stage_num == '2') -%}
+        <div class="deal-block"
+             data-deal="{{ item.deal | e }}"
+             data-mentioned="{{ 'true' if item.mentioned else 'false' }}">
+
+          <div class="deal-header">
+            <h3 class="deal-title">{{ item.deal }}</h3>
+            <span class="badge{% if light %} badge--light{% endif %}"
+                  style="background-color: {{ colour }}">
+              {{ item.stage }}
+            </span>
+          </div>
+
+          <!-- Summary field -->
+          <div class="deal-field{% if item.summary_action in ('new', 'updated') %} ai-draft{% endif %}">
+            <label class="field-label no-print">
+              Summary
+              {% if item.summary_action == 'new' %}
+                <span class="ai-flag">AI Draft — review &amp; edit</span>
+              {% elif item.summary_action == 'updated' %}
+                <span class="ai-flag">AI Updated — review &amp; edit</span>
+              {% endif %}
+            </label>
+            <div>
+              <textarea class="field-textarea summary-textarea"
+                        data-field="summary">{{ item.summary_lines | join('\n') }}</textarea>
+              <div class="print-content print-only" data-print-for="summary">
+                {% for line in item.summary_lines %}
+                <p>{{ line }}</p>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
+          <!-- Update field -->
+          <div class="deal-field">
+            <label class="field-label no-print">Update</label>
+            <div class="print-label print-only">Update</div>
+            <div>
+              <textarea class="field-textarea update-textarea"
+                        data-field="update">{{ item.update_lines | join('\n') }}</textarea>
+              <div class="print-content print-only" data-print-for="update">
+                {% for line in item.update_lines %}
+                <p>{{ line }}</p>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- ── 5. Upsell & other updates ───────────────────────────── -->
+    {% if upsell_items %}
+    <section class="report-section upsell-section">
+      <h2 class="section-heading">Upsell &amp; Other Updates</h2>
+      <div class="upsell-body">
+        <ul class="upsell-list">
+          {% for item in upsell_items %}
+          <li>{{ item }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </section>
+    {% endif %}
+
+  </div><!-- /page -->
+
+  <script>
+    /* ── Print: swap textarea ↔ print-content ─────────────────────── */
+    function syncPrintDivs() {
+      document.querySelectorAll('.deal-block').forEach(block => {
+        const summaryTA = block.querySelector('.summary-textarea');
+        const updateTA  = block.querySelector('.update-textarea');
+        const summaryPrint = block.querySelector('[data-print-for="summary"]');
+        const updatePrint  = block.querySelector('[data-print-for="update"]');
+
+        if (summaryTA && summaryPrint) {
+          summaryPrint.innerHTML = summaryTA.value
+            .split('\n').filter(l => l.trim())
+            .map(l => `<p>${escHtml(l)}</p>`).join('');
+        }
+        if (updateTA && updatePrint) {
+          updatePrint.innerHTML = updateTA.value
+            .split('\n').filter(l => l.trim())
+            .map(l => `<p>${escHtml(l)}</p>`).join('');
+        }
+      });
+    }
+
+    function escHtml(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    window.addEventListener('beforeprint', syncPrintDivs);
+
+    /* ── Save & Publish ────────────────────────────────────────────── */
+    async function saveReport() {
+      const btn    = document.getElementById('saveBtn');
+      const status = document.getElementById('saveStatus');
+
+      btn.disabled = true;
+      status.textContent = 'Saving…';
+      status.className = '';
+
+      const deals = [];
+      document.querySelectorAll('.deal-block').forEach(block => {
+        const summaryTA = block.querySelector('.summary-textarea');
+        const updateTA  = block.querySelector('.update-textarea');
+        deals.push({
+          deal:          block.dataset.deal,
+          mentioned:     block.dataset.mentioned === 'true',
+          summary_lines: summaryTA ? summaryTA.value.split('\n').filter(l => l.trim()) : [],
+          update_lines:  updateTA  ? updateTA.value.split('\n').filter(l => l.trim())  : [],
+        });
+      });
+
+      const today = new Date().toISOString().slice(0, 10);
+
+      try {
+        const res  = await fetch('/save', {
+          method:  'POST',
+          headers: {'Content-Type': 'application/json'},
+          body:    JSON.stringify({ run_date: today, deals }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          status.textContent = '✓ Saved';
+          status.className   = 'ok';
+        } else {
+          status.textContent = '✗ Save failed';
+          status.className   = 'err';
+        }
+      } catch (e) {
+        status.textContent = '✗ ' + e.message;
+        status.className   = 'err';
+      } finally {
+        btn.disabled = false;
+        setTimeout(() => { status.textContent = ''; status.className = ''; }, 4000);
+      }
+    }
+  </script>
+</body>
+</html>
