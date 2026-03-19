@@ -3,10 +3,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-SMARTSHEET_API_KEY = os.environ["SMARTSHEET_API_KEY"]
-ANTHROPIC_API_KEY  = os.environ["ANTHROPIC_API_KEY"]
-PIPELINE_SHEET_ID  = 5464922490097540
-MODEL              = "claude-sonnet-4-6"
+def _require(key: str) -> str:
+    val = os.environ.get(key)
+    if not val:
+        raise SystemExit(f"ERROR: {key} is not set. Add it to your .env file.")
+    return val
+
+SMARTSHEET_API_KEY = _require("SMARTSHEET_API_KEY")
+ANTHROPIC_API_KEY = _require("ANTHROPIC_API_KEY")
+PIPELINE_SHEET_ID = 5464922490097540
+MODEL = "claude-sonnet-4-6"
 
 DASHBOARD_URL = "https://app.smartsheet.com/b/publish?EQBCT=13232135d0854d86b63655eca3dce19f"
 
