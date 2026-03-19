@@ -25,6 +25,14 @@ def _report_date_str() -> str:
     return date.today().strftime("%d %B %Y").lstrip("0")
 
 
+def _fy_week(d: date = None) -> int:
+    """Financial year week number (FY starts 1 April)."""
+    if d is None:
+        d = date.today()
+    fy_start_year = d.year if d.month >= 4 else d.year - 1
+    return (d - date(fy_start_year, 4, 1)).days // 7 + 1
+
+
 def _enrich_stage(items: list[dict], deal_stage_map: dict) -> None:
     """Add stage and stage_num to each item in-place."""
     for item in items:
@@ -81,8 +89,12 @@ def generate():
         mentioned = item.get("mentioned", False)
         item["excluded"] = not should_include(item["deal"], history, discussed=mentioned)
 
+    # Excluded deals sink to bottom; within each group preserve Smartsheet order
+    all_updates.sort(key=lambda x: 1 if x.get("excluded") else 0)
+
     return render_template("report.html",
         report_date=_report_date_str(),
+        fy_week=_fy_week(),
         dashboard_b64=dashboard_b64,
         quadrant_b64=quadrant_b64,
         deal_updates=all_updates,

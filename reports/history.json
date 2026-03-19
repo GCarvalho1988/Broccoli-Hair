@@ -6,13 +6,34 @@
     "display_name": "Newcastle",
     "summary_lines": [
       "Newcastle tender re-released.",
-      "Previously this had been released and won by Sectra in December ’24.",
+      "Previously this had been released and won by Sectra in December â€™24.",
       "AGFA challenged and caused the tender to drop.",
       "New tender requirements are significantly more extensive and stringent.",
       "Submission on September 2nd.",
       "Waiting decision, expected ????..."
     ],
-    "last_included_date": "2026-03-06"
+    "last_update_lines": [
+      "No update."
+    ],
+    "last_included_date": "2026-03-06",
+    "last_discussed_date": "2026-03-06"
+  },
+  "thames valley": {
+    "display_name": "Thames Valley",
+    "summary_lines": [
+      "Following on the engagement at ECR and UKIO, the Thames Valley team have indicated that they will be coming out to tender reasonably soon.",
+      "This is for the NHS Buckinghamshire, Oxfordshire and Berkshire West Integrated Care Board â€“ comprises 6 Trusts:",
+      "Oxford University NHS FT,",
+      "Oxford Health NHS FT,",
+      "Berkshire Healthcare NHS FT,",
+      "Royal Berkshire NHS FT,",
+      "Buckinghamshire Healthcare NHS Trust and",
+      "South Ambulance Service NHS FT.",
+      "Region mostly Insignia/Intelerad, no Sectra sites â€“ significant opportunity.",
+      "Pre-Market Engagement released, response deadline now extended to 15th December.",
+      "Lots of scenarios, poor strategic alignment (lots of on-prem, separate solutions, etc)."
+    ],
+    "last_included_date": "2026-01-30"
   },
   "swash cloud renewal (pbr + ris, etc)": {
     "display_name": "SWASH Cloud Renewal (PBR + RIS, etc)",
@@ -22,59 +43,163 @@
     ],
     "last_included_date": "2026-03-06"
   },
-  "ireland (digital pathology national tender – dell/pfh/leica bid)": {
-    "display_name": "Ireland (Digital Pathology National Tender – Dell/PFH/Leica Bid)",
+  "ireland (integrated diagnostics & dell hse proposal)": {
+    "display_name": "Ireland (Integrated Diagnostics & Dell HSE Proposal)",
     "summary_lines": [
       "National pathology solution to be deployed phased across 40+ Labs in Southern Ireland",
-      "NIMIS (National Radiology system, delivered by Change/Optum) is currently not expected to go to tender soon, despite questions about validity and legality of the extensions – they’ve been there for 15 years and the suggestion is that they should have gone to tender.",
-      "PIN released – expected to have heavy on-prem focus"
+      "NIMIS (National Radiology system, delivered by Change/Optum) is currently not expected to go to tender soon, despite questions about validity and legality of the extensions â€“ theyâ€™ve been there for 15 years and the suggestion is that they should have gone to tender.",
+      "PIN released â€“ expected to have heavy on-prem focus"
     ],
-    "last_included_date": "2026-03-06"
+    "last_included_date": "2026-02-13"
   },
   "north central london (radiology)": {
     "display_name": "North Central London (Radiology)",
     "summary_lines": [
       "Sectra secured opportunity, beating AGFA and Philips.",
-      "Covers 7 NHS Trusts (4 Sectra – Whittington, North Midds, Moorfields and GOSH; 3 Non-Sectra – UCLH, Royal Free and RNOH).",
+      "Covers 7 NHS Trusts (4 Sectra â€“ Whittington, North Midds, Moorfields and GOSH; 3 Non-Sectra â€“ UCLH, Royal Free and RNOH).",
       "Radiology + Breast Screening only for now.",
       "Additional Ophthalmology VNA opportunity discussions ongoing with Kevan Turnbull (EA for Moorfields)",
       "Additional options pricing provided, waiting for further updates from NCL.",
       "Contract expected now by end of the year."
     ],
-    "last_included_date": "2026-03-06"
+    "last_update_lines": [
+      "Contract still being discussed â€“ final schedules being agreed, but several escalations being raised by NCL on material terms still. Still aiming for 13th March signature although seeming more and more unlikely.",
+      "Consequences of delay are significant and might result in Contract not being awarded. However, I think risk is minimal and they have no alternative therefore we should press on the need for an alternative mechanism more heavily. Drafting a contract in the alloted time is simply not feasible or safe."
+    ],
+    "last_included_date": "2026-03-06",
+    "last_discussed_date": "2026-03-06"
+  },
+  "nwl cloud": {
+    "display_name": "NWL Cloud",
+    "summary_lines": [
+      "LNW and C&W migrating from Sectra on-premise to Sectra One Cloud.",
+      "Region includes Hillingdon and Imperial (CD: Anastasia Gontsarova) â€“ aim will be to consolidate across the region eventually as these contracts mature.",
+      "Going back to drawing board with Contracts as single contract preferred.",
+      "Deployment commenced on the back of signed Letters of Guarantee (covering full cost of MS Reservation Period).",
+      "CCN issued for warranty extension to align with new contract Go-Live."
+    ],
+    "last_update_lines": [
+      "Contract fully signed! Will remove this from next week on."
+    ],
+    "last_included_date": "2026-01-16",
+    "last_discussed_date": "2026-01-16"
+  },
+  "mater private hospital (republic of ireland)": {
+    "display_name": "Mater Private Hospital (Republic of Ireland)",
+    "summary_lines": [
+      "Large private hospital group in Ireland (Dublin, Cork and Galway).",
+      "Interest in PACS replacement for Radiology & Cardiology.",
+      "Keen on further expansion to Integrated Diagnostics (Pathology mentioned).",
+      "Request for Quotation released with deadline 12th September."
+    ],
+    "last_update_lines": [
+      "We have received notification that they wouldnâ€™t be proceeding with Sectra. Have requested a debrief session to try and find out more."
+    ],
+    "last_included_date": "2026-02-20",
+    "last_discussed_date": "2026-02-20"
   },
   "nel (barts health)": {
     "display_name": "NEL (Barts Health)",
     "summary_lines": [
       "Barts Health contract expiring next year.",
-      "Evaluating options to join NEL Sectra One Cloud ASAP – considering Hybrid Cloud options ahead of a merge.",
+      "Evaluating options to join NEL Sectra One Cloud ASAP â€“ considering Hybrid Cloud options ahead of a merge.",
       "Barts evaluating 1-year migration option with hardware in situ, plus 4.5 year contract to join NEL Sectra One Cloud."
     ],
-    "last_included_date": "2026-03-06"
+    "last_update_lines": [
+      "Portfolio arranging meeting for late March."
+    ],
+    "last_included_date": "2026-03-06",
+    "last_discussed_date": "2026-02-20"
   },
   "royal marsden sectra one cloud refresh + vna deployment": {
     "display_name": "Royal Marsden Sectra One Cloud Refresh + VNA Deployment",
     "summary_lines": [
       "Royal Marsden need a HW Refresh in 2026.",
-      "Currently Customer provided HW – wanting to evaluate options between doing an Customer on-premises refresh, a Customer provided cloud refresh or a Sectra One Cloud refresh for the remainder of the contract period."
+      "Currently Customer provided HW â€“ wanting to evaluate options between doing an Customer on-premises refresh, a Customer provided cloud refresh or a Sectra One Cloud refresh for the remainder of the contract period."
     ],
-    "last_included_date": "2026-03-06"
+    "last_update_lines": [
+      "Still awaiting figures from Hyland to reprice.",
+      "Agreed that the PACS Contracts must remain in site, so this will remain in situ.",
+      "RMH have requested two options â€“ 5 years on-premise and 1-year on premise followed by 4 year Sectra One Cloud. This will involved lots of contract reconciliation at the tail end but provides a longer contract"
+    ],
+    "last_included_date": "2026-03-06",
+    "last_discussed_date": "2026-03-06"
   },
   "north east and north cumbria digital pathology (nenc, formally neca)": {
     "display_name": "North East and North Cumbria Digital Pathology (NENC, formally NECA)",
     "summary_lines": [
       "The region, formerly known as NECA, has gone out to tender for a new Digital Pathology solution.",
       "Currently a Sectra DPAT site comprising the following Trusts:",
-      "County Durham and Darlington NHS Foundation Trust",
-      "Gateshead Health NHS Foundation Trust",
-      "Newcastle Upon Tyne Hospitals NHS Foundation Trust",
-      "North Tees and Hartlepool NHS Foundation Trust",
-      "South Tees Hospitals NHS Foundation Trust",
-      "Northumbria Healthcare NHS Foundation Trust",
-      "North Cumbria Integrated Care NHS Foundation Trust",
-      "The consortium is currently on customer-provided hardware and was mandated to retender despite being broadly satisfied with Sectra’s existing service.",
-      "This was Sectra UK’s first live DPAT site (October 2019) and was very competitively priced at the time.",
+      "Countyâ€¯Durhamâ€¯andâ€¯Darlingtonâ€¯NHSâ€¯Foundationâ€¯Trust",
+      "Gatesheadâ€¯Healthâ€¯NHSâ€¯Foundationâ€¯Trust",
+      "Newcastleâ€¯Uponâ€¯Tyneâ€¯Hospitalsâ€¯NHSâ€¯Foundationâ€¯Trust",
+      "Northâ€¯Teesâ€¯andâ€¯Hartlepoolâ€¯NHSâ€¯Foundationâ€¯Trust",
+      "Southâ€¯Teesâ€¯Hospitalsâ€¯NHSâ€¯Foundationâ€¯Trust",
+      "Northumbriaâ€¯Healthcareâ€¯NHSâ€¯Foundationâ€¯Trust",
+      "Northâ€¯Cumbriaâ€¯Integratedâ€¯Careâ€¯NHSâ€¯Foundationâ€¯Trust",
+      "The consortium is currently on customer-provided hardware and was mandated to retender despite being broadly satisfied with Sectraâ€™s existing service.",
+      "This was Sectra UKâ€™s first live DPAT site (October 2019) and was very competitively priced at the time.",
       "A significant price increase is expected, but we have proactively aligned expectations with the customer and shared indicative business pricing earlier this year."
+    ],
+    "last_update_lines": [
+      "The Trust are adamant that a contract must be signed by 31st March. We have pushed back heavily but it sounds like they are still unconvinced.",
+      "Escalation call w/ senior stakeholders to be booked next week, but there may be a need for a letter of escalation to the Trust as they are not taking no for an answer."
+    ],
+    "last_included_date": "2026-03-06",
+    "last_discussed_date": "2026-03-06"
+  },
+  "npic upsell": {
+    "display_name": "NPIC Upsell",
+    "summary_lines": [
+      "NPIC Contract coming to an end in September 2027.",
+      "They have requested various extension and reprofile options to accommodate for the increased licencing profile they are expecting.",
+      "Option include extending for 2.5yrs to align with the Expo-e contract and fully utilised the procured storage.",
+      "They have also requested a Sectra One Cloud option to evaluate moving to SaaS in 2028."
+    ],
+    "last_update_lines": [
+      "CCN signed â€“ will remove next week."
+    ],
+    "last_included_date": "2026-02-27",
+    "last_discussed_date": "2026-02-27"
+  },
+  "west midlands imaging network (wmin) â€“ converged digital imaging platform (cdip)": {
+    "display_name": "West Midlands Imaging Network (WMIN) â€“ Converged Digital Imaging Platform (CDIP)",
+    "summary_lines": [
+      "The WMIN, led by University Hospitals Birmingham, has issued an RFI for a regional Converged Digital Imaging Platform.",
+      "Aims to unify PACS/RIS across 15 Trusts, supporting shared reporting, AI, and data analytics.",
+      "Walsall Healthcare NHS Trust",
+      "Sandwell and West Birmingham Hospitals NHS Trust",
+      "The Royal Wolverhampton NHS Trust",
+      "The Dudley Group NHS Foundation Trust",
+      "University Hospitals Birmingham NHS Foundation Trust",
+      "The Royal Orthopaedic Hospital NHS Foundation Trust",
+      "Birmingham Womenâ€™s and Childrenâ€™s NHS Foundation Trust",
+      "University Hospitals Coventry & Warwickshire NHS Trust",
+      "The George Eliot Hospital NHS Trust",
+      "South Warwickshire University NHS Trust",
+      "Worcestershire Acute Hospitals NHS Trust",
+      "Wye Valley NHS Trust",
+      "The Shrewsbury & Telford Hospital NHS Trust",
+      "The Robert Jones & Agnes Hunt Orthopaedic Hospitals NHS Foundation Trust",
+      "University Hospitals of North Midlands NHS Trust",
+      "Estimated value ~Â£76 m (5+5 or 10-year contract).",
+      "Tender expected 2026 following current RFI and market testing.",
+      "Currently multi-vendor landscape; move toward single platform.",
+      "Sectra well positioned given regional footprint and proven success in similar multi-Trust imaging programmes (e.g. GM, NIPACS+).",
+      "Competition expected from incumbent PACS suppliers; early engagement critical."
+    ],
+    "last_update_lines": [
+      "Response submitted â€“ will remove this entry from next week while we wait for tender."
+    ],
+    "last_included_date": "2026-01-30",
+    "last_discussed_date": "2026-01-30"
+  },
+  "ireland (digital pathology national tender â€“ dell/pfh/leica bid)": {
+    "display_name": "Ireland (Digital Pathology National Tender â€“ Dell/PFH/Leica Bid)",
+    "summary_lines": [
+      "National pathology solution to be deployed phased across 40+ Labs in Southern Ireland",
+      "NIMIS (National Radiology system, delivered by Change/Optum) is currently not expected to go to tender soon, despite questions about validity and legality of the extensions â€“ theyâ€™ve been there for 15 years and the suggestion is that they should have gone to tender.",
+      "PIN released â€“ expected to have heavy on-prem focus"
     ],
     "last_included_date": "2026-03-06"
   }

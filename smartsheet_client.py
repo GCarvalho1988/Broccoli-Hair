@@ -16,6 +16,7 @@ def fetch_pipeline_data() -> list[dict]:
     headers = {col.id: col.title for col in sheet.columns}
 
     deals = []
+    seen_names = set()
     for row in sheet.rows:
         row_data = {headers[c.column_id]: c.display_value or c.value
                     for c in row.cells if c.column_id in headers}
@@ -31,6 +32,14 @@ def fetch_pipeline_data() -> list[dict]:
             continue
         if "closed" in stage.lower():
             continue
+        # Deduplicate (keep first occurrence of each deal name)
+        if name.lower() in seen_names:
+            continue
+        seen_names.add(name.lower())
+        # Only include active pipeline stages 1–6
+        stage_num = _stage_number(stage)
+        if stage_num not in {"1", "2", "3", "4", "5", "6"}:
+            continue
 
         deals.append({
             "Opportunity":      name,
@@ -41,7 +50,7 @@ def fetch_pipeline_data() -> list[dict]:
             "Expected Close":   row_data.get("Expected Close Date", ""),
             "Strategic Fit":    _to_float(row_data.get("Strategic Fit")),
             "Profitability":    _to_float(row_data.get("Profitability")),
-            "Stage Number":     _stage_number(stage),
+            "Stage Number":     stage_num,
         })
     return deals
 

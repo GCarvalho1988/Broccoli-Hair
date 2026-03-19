@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Weekly Pipeline Report — {{ report_date }}</title>
+  <title>Sales &amp; Marketing Weekly Report — Week {{ fy_week }} — {{ report_date }}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
@@ -327,8 +327,9 @@
       border: 1.5px solid var(--border);
       border-radius: 3px;
       padding: 0.5rem 0.75rem;
-      resize: vertical;
-      min-height: 3.5rem;
+      resize: none;
+      overflow: hidden;
+      min-height: 2.5rem;
       width: 100%;
       transition: border-color 0.15s, background 0.15s;
     }
@@ -337,7 +338,7 @@
       border-color: var(--navy-mid);
       background: #fff;
     }
-    .summary-textarea { min-height: 5.5rem; }
+    .summary-textarea { min-height: 3rem; }
     .ai-draft .field-textarea { border-color: #d97706; background: var(--ai-bg); }
 
     /* ─── Upsell ───────────────────────────────────────────────────── */
@@ -352,8 +353,9 @@
       border: 1.5px solid var(--border);
       border-radius: 3px;
       padding: 0.6rem 0.85rem;
-      resize: vertical;
-      min-height: 5rem;
+      resize: none;
+      overflow: hidden;
+      min-height: 3rem;
       width: 100%;
     }
     .upsell-textarea:focus {
@@ -435,7 +437,7 @@
   <!-- ── Toolbar (hidden on print) ──────────────────────────────── -->
   <div class="toolbar no-print">
     <div>
-      <div class="toolbar-brand">SECTRA <em>·</em> Sales Intelligence</div>
+      <div class="toolbar-brand">SECTRA UK&amp;I <em>·</em> Sales &amp; Marketing — Week {{ fy_week }}</div>
       <div class="toolbar-date">{{ report_date }}</div>
     </div>
     <div class="toolbar-actions">
@@ -450,8 +452,8 @@
 
     <!-- Report header -->
     <header class="report-header">
-      <div class="report-header-brand">Sectra UK <span>|</span> Sales Manager Report</div>
-      <h1 class="report-header-title">Weekly Pipeline Report</h1>
+      <div class="report-header-brand">Sectra UK&amp;I <span>|</span> Sales &amp; Marketing</div>
+      <h1 class="report-header-title">Sales &amp; Marketing Weekly Report — Week {{ fy_week }}</h1>
       <p class="report-header-date">{{ report_date }}</p>
     </header>
 
@@ -571,6 +573,19 @@
   </script>
 
   <script>
+    /* ── Auto-resize all textareas to fit content ──────────────────── */
+    function autoResize(ta) {
+      ta.style.height = 'auto';
+      ta.style.height = ta.scrollHeight + 'px';
+    }
+    function initAutoResize() {
+      document.querySelectorAll('.field-textarea, .upsell-textarea').forEach(ta => {
+        autoResize(ta);
+        ta.addEventListener('input', () => autoResize(ta));
+      });
+    }
+    initAutoResize();
+
     /* ── Exclude checkbox behaviour ────────────────────────────────── */
     function initExclude() {
       document.querySelectorAll('.exclude-checkbox').forEach(cb => {
@@ -649,6 +664,9 @@
         if (upsellTA && data.upsell_items) {
           upsellTA.value = data.upsell_items.join('\n');
         }
+
+        /* Re-fit all textareas to new content */
+        initAutoResize();
 
         /* Populate & reveal High Level Summary */
         const tbody  = document.getElementById('summaryTbody');
