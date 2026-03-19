@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>History Editor — Sectra UK&amp;I</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --s-navy:   #004688;
+      --s-deep:   #003260;
+      --s-mid:    #00548E;
+      --s-cyan:   #0A93CD;
+      --s-light:  #7AAADA;
+      --s-pale:   #D2E0FA;
+      --s-palest: #EEF4FB;
+      --s-orange: #F58025;
+      --white:    #ffffff;
+      --body:     #1e2d3d;
+      --muted:    #5a6a7a;
+      --border:   #c5d5e8;
+      --danger:   #c0392b;
+    }
+
+    html { font-size: 15px; }
+    body {
+      font-family: 'Barlow', Arial, sans-serif;
+      color: var(--body);
+      background: #e8f0f8;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ─── Header ───────────────────────────────────────────────────── */
+    .site-header {
+      background: var(--s-deep);
+      border-bottom: 2px solid var(--s-orange);
+      padding: 0 2rem;
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      box-shadow: 0 2px 10px rgba(0,50,96,0.35);
+      flex-shrink: 0;
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      padding: 0.7rem 1.5rem 0.7rem 0;
+      border-right: 1px solid rgba(255,255,255,0.12);
+      margin-right: 0;
+    }
+
+    .header-wordmark {
+      font-family: 'Barlow Condensed', Arial Narrow, sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--white);
+    }
+
+    .header-divider { width: 1px; height: 1rem; background: rgba(255,255,255,0.2); }
+
+    .header-sub {
+      font-size: 0.75rem;
+      font-weight: 400;
+      color: rgba(255,255,255,0.45);
+      letter-spacing: 0.05em;
+    }
+
+    /* ─── Nav tabs ─────────────────────────────────────────────────── */
+    .header-nav { display: flex; align-items: stretch; margin-left: 1.5rem; }
+
+    .nav-tab {
+      display: flex;
+      align-items: center;
+      padding: 0 1.1rem;
+      font-family: 'Barlow Condensed', Arial Narrow, sans-serif;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+      text-decoration: none;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+      margin-bottom: -2px;
+    }
+    .nav-tab:hover { color: rgba(255,255,255,0.85); }
+    .nav-tab.active {
+      color: var(--white);
+      border-bottom-color: var(--s-orange);
+    }
+
+    /* ─── Toolbar ──────────────────────────────────────────────────── */
+    .toolbar {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0.7rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: 0 1px 6px rgba(0,70,136,0.08);
+    }
+
+    .toolbar-info {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .toolbar-info strong { color: var(--body); }
+
+    .btn {
+      font-family: 'Barlow Condensed', Arial Narrow, sans-serif;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.45rem 1.2rem;
+      border-radius: 2px;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.45; cursor: default; }
+
+    .btn--save {
+      background: var(--s-orange);
+      color: var(--white);
+      box-shadow: 0 2px 8px rgba(245,128,37,0.3);
+    }
+    .btn--save:hover:not(:disabled) { opacity: 0.9; }
+
+    #saveStatus {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--muted);
+    }
+    #saveStatus.ok  { color: #2e7d32; }
+    #saveStatus.err { color: var(--danger); }
+
+    /* ─── Main ─────────────────────────────────────────────────────── */
+    .main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+      width: 100%;
+    }
+
+    /* ─── Deal card ────────────────────────────────────────────────── */
+    .deal-card {
+      background: var(--white);
+      border-radius: 2px;
+      border-top: 3px solid var(--s-orange);
+      box-shadow: 0 1px 6px rgba(0,70,136,0.09);
+      margin-bottom: 1.25rem;
+      overflow: hidden;
+      transition: opacity 0.3s;
+    }
+
+    .deal-card.is-deleted {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    .deal-card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.8rem 1.25rem;
+      background: var(--s-palest);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .deal-card-name {
+      font-family: 'Barlow Condensed', Arial Narrow, sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: var(--s-navy);
+      flex: 1;
+    }
+
+    .deal-meta {
+      font-size: 0.72rem;
+      font-weight: 300;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .btn-delete {
+      font-family: 'Barlow Condensed', Arial Narrow, sans-serif;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.3em 0.75em;
+      border-radius: 2px;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+    .btn-delete:hover { border-color: var(--danger); color: var(--danger); }
+
+    /* ─── Field ────────────────────────────────────────────────────── */
+    .deal-card-body { padding: 1rem 1.25rem 1.1rem; }
+
+    .field { margin-bottom: 0.85rem; }
+    .field:last-child { margin-bottom: 0; }
+
+    .field-label {
+      font-family: 'Barlow Condensed', Arial Narrow, sans-serif;
+      font-size: 0.63rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.3rem;
+      display: block;
+    }
+
+    .field-textarea {
+      font-family: 'Barlow', Arial, sans-serif;
+      font-size: 0.855rem;
+      font-weight: 300;
+      line-height: 1.65;
+      color: var(--body);
+      background: var(--s-palest);
+      border: 1.5px solid var(--border);
+      border-radius: 2px;
+      padding: 0.5rem 0.75rem;
+      resize: none;
+      overflow: hidden;
+      min-height: 2.5rem;
+      width: 100%;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .field-textarea:focus {
+      outline: none;
+      border-color: var(--s-cyan);
+      background: var(--white);
+    }
+
+    /* ─── Empty state ───────────────────────────────────────────────── */
+    .empty {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 300;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-brand">
+      <div class="header-wordmark">Sectra</div>
+      <div class="header-divider"></div>
+      <div class="header-sub">Sales &amp; Marketing · UK&amp;I</div>
+    </div>
+    <nav class="header-nav">
+      <a class="nav-tab" href="/">Generate</a>
+      <a class="nav-tab active" href="/history-editor">History</a>
+    </nav>
+  </header>
+
+  <div class="toolbar">
+    <div class="toolbar-info">
+      <strong>{{ deals | length }}</strong> deals in history &nbsp;·&nbsp;
+      Last run: <strong>{{ last_run or 'never' }}</strong>
+    </div>
+    <div style="display:flex;align-items:center;gap:0.75rem;">
+      <span id="saveStatus"></span>
+      <button class="btn btn--save" onclick="saveAll()">Save All Changes</button>
+    </div>
+  </div>
+
+  <main class="main">
+    {% if deals %}
+      {% for deal in deals %}
+      <div class="deal-card" id="card-{{ loop.index }}" data-key="{{ deal.key | e }}">
+        <div class="deal-card-header">
+          <div class="deal-card-name">{{ deal.display_name }}</div>
+          <div class="deal-meta">
+            {% if deal.last_discussed_date %}discussed {{ deal.last_discussed_date }}{% endif %}
+            {% if deal.last_discussed_date and deal.last_included_date %} &nbsp;·&nbsp; {% endif %}
+            {% if deal.last_included_date %}included {{ deal.last_included_date }}{% endif %}
+          </div>
+          <button class="btn-delete" onclick="markDeleted(this)">Delete</button>
+        </div>
+        <div class="deal-card-body">
+          <div class="field">
+            <label class="field-label">Summary</label>
+            <textarea class="field-textarea summary-ta">{{ deal.summary_lines | join('\n') }}</textarea>
+          </div>
+          <div class="field">
+            <label class="field-label">Last Update</label>
+            <textarea class="field-textarea update-ta">{{ deal.last_update_lines | join('\n') }}</textarea>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty">No deals in history yet. Generate a report and finalise it to start building history.</div>
+    {% endif %}
+  </main>
+
+  <script>
+    /* Auto-resize textareas */
+    function autoResize(ta) { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; }
+    document.querySelectorAll('.field-textarea').forEach(ta => {
+      autoResize(ta);
+      ta.addEventListener('input', () => autoResize(ta));
+    });
+
+    /* Mark for deletion */
+    function markDeleted(btn) {
+      const card = btn.closest('.deal-card');
+      if (card.dataset.deleted === 'true') {
+        card.dataset.deleted = 'false';
+        card.classList.remove('is-deleted');
+        btn.textContent = 'Delete';
+      } else {
+        card.dataset.deleted = 'true';
+        card.classList.add('is-deleted');
+        btn.textContent = 'Undo';
+      }
+    }
+
+    /* Save all */
+    async function saveAll() {
+      const btn    = document.querySelector('.btn--save');
+      const status = document.getElementById('saveStatus');
+      btn.disabled = true;
+      status.textContent = 'Saving…';
+      status.className = '';
+
+      const deals = [];
+      document.querySelectorAll('.deal-card').forEach(card => {
+        const sumTA = card.querySelector('.summary-ta');
+        const updTA = card.querySelector('.update-ta');
+        deals.push({
+          key:              card.dataset.key,
+          deleted:          card.dataset.deleted === 'true',
+          summary_lines:    sumTA ? sumTA.value.split('\n').filter(l => l.trim()) : [],
+          last_update_lines: updTA ? updTA.value.split('\n').filter(l => l.trim()) : [],
+        });
+      });
+
+      try {
+        const res  = await fetch('/history-editor/save', {
+          method:  'POST',
+          headers: {'Content-Type': 'application/json'},
+          body:    JSON.stringify({ deals }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || 'Save failed');
+        status.textContent = '✓ Saved';
+        status.className   = 'ok';
+        /* Remove deleted cards from DOM */
+        document.querySelectorAll('.deal-card[data-deleted="true"]').forEach(c => c.remove());
+      } catch (e) {
+        status.textContent = '✗ ' + e.message;
+        status.className   = 'err';
+      } finally {
+        btn.disabled = false;
+        setTimeout(() => { status.textContent = ''; status.className = ''; }, 5000);
+      }
+    }
+  </script>
+
+</body>
+</html>

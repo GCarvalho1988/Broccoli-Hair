@@ -1,8 +1,10 @@
 """
 Claude API calls for the weekly report.
 
-draft_report_content() — single call that drafts updates, summaries, and upsell items.
-generate_high_level_summary() — lightweight call: one-liner per deal from summaries only.
+draft_updates_from_transcript() — AI drafts deal updates from a transcript.
+extract_upsell_items()           — AI extracts upsell items from a portfolio PDF.
+update_summaries_from_updates()  — AI merges new update text into existing summaries.
+generate_high_level_summary()    — One-liner per deal, used at PDF generation time.
 """
 import json, re
 import anthropic
@@ -12,21 +14,22 @@ from history import get_deal
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 
-def draft_report_content(deals: list[dict], transcript: str,
-                         portfolio_text: str, history: dict) -> dict:
+# ─── 1. Draft updates from transcript ────────────────────────────────────────
+
+def draft_updates_from_transcript(deals: list[dict], transcript: str,
+                                   history: dict) -> dict:
     """
     Returns:
     {
       "deal_updates": [
         {
-          "deal": str,           # matched to Smartsheet name
+          "deal": str,
           "mentioned": bool,
           "update_lines": [str],
           "summary_action": "unchanged" | "updated" | "new",
           "summary_lines": [str]
         }
-      ],
-      "upsell_items": [str]
+      ]
     }
     """
     deals_text = _format_deals(deals, history)
@@ -43,9 +46,6 @@ EXISTING DEAL SUMMARIES (from previous reports):
 MEETING TRANSCRIPT (Teams auto-generated — may use abbreviations or informal names):
 {transcript[:8000]}
 
-PORTFOLIO WEEKLY REPORT (for upsell items):
-{portfolio_text[:3000]}
-
 ---
 
 TASK: Produce a JSON response with exactly this structure (no markdown, no extra text — raw JSON only):
@@ -59,8 +59,7 @@ TASK: Produce a JSON response with exactly this structure (no markdown, no extra
       "summary_action": "<unchanged|updated|new>",
       "summary_lines": ["<line 1>", "<line 2>", "..."]
     }}
-  ],
-  "upsell_items": ["<item 1>", "<item 2>"]
+  ]
 }}
 
 RULES:
@@ -80,7 +79,10 @@ RULES:
    - summary_action="new": no existing summary — draft one from Smartsheet data and transcript.
      If you have very little data, draft what you can and flag the first line as "[AI DRAFT — please review]"
 
-4. UPSELL: Extract upsell opportunities from the Portfolio PDF and transcript. If none: [].
+4. PRESERVE DETAILS: Never remove or overwrite specific factual details already in the existing summary.
+   This includes: NHS trust/ICB/CCG/board names, number of sites, current incumbent vendors,
+   deal values and contract periods, key dates, clinical/pathology context, geography.
+   If there is new information, ADD it. Summaries should grow and improve, never shrink or lose facts.
 """
 
     message = client.messages.create(
@@ -96,18 +98,136 @@ RULES:
     return _parse_response(raw, deals, history)
 
 
+# ─── 2. Extract upsell items from portfolio PDF ───────────────────────────────
+
+def extract_upsell_items(portfolio_text: str) -> list[str]:
+    """
+    Extract upsell / cross-sell opportunities from a portfolio report.
+    Returns a list of short opportunity strings, or [] if none found.
+    """
+    if not portfolio_text.strip():
+        return []
+
+    prompt = f"""You are helping a UK medical imaging software sales team identify upsell and cross-sell opportunities.
+
+Extract concrete opportunities from the portfolio report below.
+Include: product upgrades, contract renewals, expansion to new sites, new module sales, support contract extensions.
+Be specific — name the customer and opportunity where possible. If none, return [].
+
+PORTFOLIO REPORT:
+{portfolio_text[:3000]}
+
+Respond with raw JSON only — a list of strings (no markdown):
+["<opportunity 1>", "<opportunity 2>", ...]"""
+
+    message = client.messages.create(
+        model=MODEL,
+        max_tokens=1000,
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    if not message.content:
+        return []
+    raw = message.content[0].text
+    raw = re.sub(r"^```(?:json)?\s*", "", raw.strip())
+    raw = re.sub(r"\s*```$", "", raw)
+    try:
+        result = json.loads(raw)
+        return result if isinstance(result, list) else []
+    except json.JSONDecodeError:
+        print(f"extract_upsell_items: invalid JSON: {raw[:200]}")
+        return []
+
+
+# ─── 3. Update summaries from written updates ─────────────────────────────────
+
+def update_summaries_from_updates(deals: list[dict]) -> dict[str, list[str]]:
+    """
+    For each deal with new update_lines, merge them into the existing summary.
+
+    Input:  [{"deal": str, "existing_summary_lines": [str], "update_lines": [str]}]
+    Returns: {"deal name": [updated_summary_lines], ...}
+
+    Deals not present in the input are not returned (caller only passes deals with updates).
+    Returns {} on error — caller falls back to existing summaries.
+    """
+    if not deals:
+        return {}
+
+    deals_block = ""
+    for d in deals:
+        deals_block += f"\n\n=== {d['deal']} ===\n"
+        deals_block += "EXISTING SUMMARY:\n"
+        for line in d["existing_summary_lines"]:
+            deals_block += f"  - {line}\n"
+        deals_block += "NEW UPDATE THIS WEEK:\n"
+        for line in d["update_lines"]:
+            deals_block += f"  - {line}\n"
+
+    prompt = f"""You are updating deal summaries for a UK medical imaging software sales pipeline (Sectra UK&I).
+
+For each deal below, produce an updated summary by merging the NEW UPDATE into the EXISTING SUMMARY.
+
+RULES:
+1. PRESERVE all existing factual details: NHS trust/ICB/CCG/board names, number of sites,
+   current incumbent vendors, deal values and contract periods, key dates, clinical/pathology
+   context, geography, stage history. Never remove or overwrite these facts.
+2. ADD information from the new update. If the update is already captured in the summary,
+   return the summary unchanged.
+3. Summaries must be a bullet-point list of concise factual statements.
+4. Do not add padding or repetition. Summaries should grow in accuracy, not length.
+{deals_block}
+
+Respond with raw JSON only (no markdown):
+{{
+  "<exact deal name>": ["updated bullet 1", "updated bullet 2", ...],
+  ...
+}}"""
+
+    message = client.messages.create(
+        model=MODEL,
+        max_tokens=6000,
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    if not message.content:
+        return {}
+    raw = message.content[0].text
+    raw = re.sub(r"^```(?:json)?\s*", "", raw.strip())
+    raw = re.sub(r"\s*```$", "", raw)
+    try:
+        result = json.loads(raw)
+        return {k: v for k, v in result.items() if isinstance(v, list)}
+    except json.JSONDecodeError:
+        print(f"update_summaries_from_updates: invalid JSON: {raw[:200]}")
+        return {}
+
+
+# ─── 4. High-level summary (unchanged) ───────────────────────────────────────
+
 def generate_high_level_summary(deals: list[dict]) -> list[dict]:
     """
-    Generate a one-liner per deal from its summary lines only.
-    Input:   [{"deal", "stage", "stage_num", "summary_lines", "forecast"}]
+    Generate a one-liner per deal from its summary and update lines.
+    Input:   [{"deal", "stage", "stage_num", "summary_lines", "update_lines", "forecast"}]
     Returns: [{"deal", "stage", "stage_num", "one_liner", "forecast"}]
     """
     if not deals:
         return []
 
     deals_text = "\n\n".join(
-        f'{d["deal"]}:\n' + "\n".join(
-            f"  - {s}" for s in (d.get("summary_lines") or ["(no summary)"])
+        f'{d["deal"]}:\n'
+        + (
+            "  UPDATE THIS WEEK:\n" + "\n".join(
+                f"    - {u}" for u in d.get("update_lines") or []
+                if u.strip() and u.strip() != "No update."
+            ) + "\n"
+            if any(u.strip() and u.strip() != "No update."
+                   for u in (d.get("update_lines") or []))
+            else ""
+        )
+        + "  BACKGROUND SUMMARY:\n"
+        + "\n".join(
+            f"    - {s}" for s in (d.get("summary_lines") or ["(no summary)"])
         )
         for d in deals
     )
@@ -115,8 +235,10 @@ def generate_high_level_summary(deals: list[dict]) -> list[dict]:
     prompt = f"""You are helping write a weekly sales pipeline report for Sectra UK.
 
 For each deal below, write ONE concise sentence describing the current pipeline status.
-Base your answer ONLY on the summary provided. Do not add external information.
+If an UPDATE THIS WEEK is provided, base the status predominantly on that.
+Otherwise use the BACKGROUND SUMMARY.
 Be specific and direct. Use present tense. Do not start with the deal name.
+Do not add external information.
 
 {deals_text}
 
@@ -148,7 +270,8 @@ Respond with raw JSON only — no markdown, no extra text:
                 "deal":      d["deal"],
                 "stage":     d.get("stage", ""),
                 "stage_num": d.get("stage_num", "0"),
-                "one_liner": result_map.get(d["deal"].lower(), ""),
+                "one_liner": result_map.get(d["deal"].lower())
+                             or _hls_fallback(d)["one_liner"],
                 "forecast":  d.get("forecast", ""),
             }
             for d in deals
@@ -156,6 +279,8 @@ Respond with raw JSON only — no markdown, no extra text:
     except (json.JSONDecodeError, KeyError):
         return [_hls_fallback(d) for d in deals]
 
+
+# ─── Helpers ──────────────────────────────────────────────────────────────────
 
 def _hls_fallback(d: dict) -> dict:
     lines = d.get("summary_lines") or []
@@ -232,4 +357,4 @@ def _empty_result(deals: list[dict], history: dict) -> dict:
             "summary_action": "unchanged",
             "summary_lines": entry.get("summary_lines", []) if entry else [],
         })
-    return {"deal_updates": updates, "upsell_items": []}
+    return {"deal_updates": updates}

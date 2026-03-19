@@ -35,17 +35,23 @@ def generate_quadrant(deals: list[dict]) -> str:
     ax.axhline(5, color="#cccccc", linewidth=1, linestyle="--")
     ax.axvline(5, color="#cccccc", linewidth=1, linestyle="--")
 
+    label_positions = _place_labels(points)
+
     for pt in points:
-        ax.scatter(pt["x"], pt["y"], s=900, color=pt["colour"],
-                   alpha=0.85, zorder=3, edgecolors="white", linewidths=1.5)
+        ax.scatter(pt["x"], pt["y"], s=1400, color=pt["colour"],
+                   alpha=0.85, zorder=3, edgecolors="white", linewidths=2)
+
+    for pt, (lx, ly) in zip(points, label_positions):
         ax.annotate(pt["label"], (pt["x"], pt["y"]),
-                    textcoords="offset points",
-                    xytext=_label_offset(pt["x"], pt["y"]),
-                    fontsize=9, fontweight="bold",
+                    xytext=(lx, ly),
+                    textcoords="data",
+                    arrowprops=dict(arrowstyle="-", color="#aaaaaa",
+                                    lw=0.8, alpha=0.7),
+                    fontsize=10, fontweight="bold",
                     ha="center", va="center",
-                    bbox=dict(boxstyle="round,pad=0.3",
+                    bbox=dict(boxstyle="round,pad=0.35",
                               fc="white", ec=pt["colour"],
-                              alpha=0.9, linewidth=1.2))
+                              alpha=0.95, linewidth=1.4))
 
     ax.set_xlim(0, 10)
     ax.set_ylim(0, 10)
@@ -54,12 +60,16 @@ def generate_quadrant(deals: list[dict]) -> str:
     ax.set_title("Deal Quadrant Analysis", fontsize=16, fontweight="bold", pad=15)
     ax.tick_params(labelsize=10)
 
-    for txt, x, y in [("High Fit\nHigh Profit", 7.5, 7.5),
-                       ("High Fit\nLow Profit",  2.5, 7.5),
-                       ("Low Fit\nHigh Profit",  7.5, 2.5),
-                       ("Low Fit\nLow Profit",   2.5, 2.5)]:
-        ax.text(x, y, txt, fontsize=9, color="#aaaaaa",
-                ha="center", va="center", style="italic")
+    quadrant_labels = [
+        ("Flagship\nProjects",  7.5, 7.5, "#2E7D32"),
+        ("Strategy\nPlays",     2.5, 7.5, "#1565C0"),
+        ("Core\nRevenue",       7.5, 2.5, "#00838F"),
+        ("Questionable",        2.5, 2.5, "#888888"),
+    ]
+    for txt, x, y, col in quadrant_labels:
+        ax.text(x, y, txt, fontsize=13, color=col, alpha=0.30,
+                ha="center", va="center", fontweight="bold",
+                linespacing=1.4)
 
     plt.tight_layout()
     buf = io.BytesIO()
@@ -100,8 +110,44 @@ def _spread_points(points: list[dict], min_dist: float = 0.6,
     return pts
 
 
-def _label_offset(x: float, y: float) -> tuple[int, int]:
-    """Offset label away from the centre of the chart."""
-    ox = 18 if x >= 5 else -18
-    oy = 18 if y >= 5 else -18
-    return (ox, oy)
+def _place_labels(points: list[dict]) -> list[tuple[float, float]]:
+    """
+    Compute non-overlapping label positions in data coordinates using
+    bounding-box repulsion. Returns list of (x, y) parallel to points.
+    """
+    # Initial placement: offset from dot based on which quadrant the dot is in
+    positions = [
+        [pt["x"] + (0.8 if pt["x"] >= 5 else -0.8),
+         pt["y"] + (0.55 if pt["y"] >= 5 else -0.55)]
+        for pt in points
+    ]
+
+    # Approximate label half-sizes in data coordinates
+    lw, lh = 1.4, 0.42
+
+    for _ in range(400):
+        moved = False
+        for i in range(len(positions)):
+            for j in range(i + 1, len(positions)):
+                dx = positions[i][0] - positions[j][0]
+                dy = positions[i][1] - positions[j][1]
+                overlap_x = lw * 2 - abs(dx)
+                overlap_y = lh * 2 - abs(dy)
+                if overlap_x > 0 and overlap_y > 0:
+                    # Push along the axis with the smaller overlap
+                    if overlap_x < overlap_y:
+                        push = overlap_x * 0.5 * (1 if dx >= 0 else -1)
+                        positions[i][0] += push
+                        positions[j][0] -= push
+                    else:
+                        push = overlap_y * 0.5 * (1 if dy >= 0 else -1)
+                        positions[i][1] += push
+                        positions[j][1] -= push
+                    moved = True
+        for pos in positions:
+            pos[0] = max(0.1, min(9.9, pos[0]))
+            pos[1] = max(0.1, min(9.9, pos[1]))
+        if not moved:
+            break
+
+    return [(pos[0], pos[1]) for pos in positions]

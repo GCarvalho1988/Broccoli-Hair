@@ -113,13 +113,6 @@
     .btn:active { transform: scale(0.97); }
     .btn:disabled { opacity: 0.45; cursor: default; }
 
-    .btn--regenerate {
-      background: transparent;
-      color: rgba(255,255,255,0.8);
-      border-color: rgba(255,255,255,0.3);
-    }
-    .btn--regenerate:hover:not(:disabled) { background: rgba(255,255,255,0.1); }
-
     .btn--finalise {
       background: var(--s-orange);
       color: var(--white);
@@ -302,39 +295,67 @@
 
     .deal-block {
       border-bottom: 1px solid var(--border);
-      padding: 1.2rem 0;
-      transition: opacity 0.2s;
+      padding: 1.2rem 0 1.2rem 0.85rem;
+      border-left: 3px solid transparent;
+      transition: opacity 0.25s, border-color 0.25s;
     }
     .deal-block:last-child { border-bottom: none; }
 
     .deal-block--excluded { opacity: var(--excluded-op); }
     .deal-block--excluded .field-textarea { pointer-events: none; }
 
+    /* Discussed deals: subtle warm tint */
+    .deal-block[data-mentioned="true"] {
+      background: linear-gradient(to right, rgba(245,128,37,0.03) 0%, transparent 100%);
+    }
+
     .deal-header {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
-      margin-bottom: 0.85rem;
+      gap: 0.6rem;
+      margin-bottom: 0.75rem;
       flex-wrap: wrap;
     }
 
     .deal-title {
       font-family: var(--font-head);
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       font-weight: 700;
       letter-spacing: 0.01em;
       color: var(--s-navy);
     }
 
-    /* Orange left-tick on mentioned deals */
-    .deal-block[data-mentioned="true"] .deal-title::before {
-      content: '';
-      display: inline-block;
-      width: 3px; height: 0.9em;
-      background: var(--s-orange);
+    .deal-meta {
+      font-size: 0.72rem;
+      font-weight: 300;
+      color: var(--muted);
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+    }
+
+    /* Discussed / No update pill */
+    .discussed-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3em;
+      font-family: var(--font-head);
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.18em 0.65em;
       border-radius: 2px;
-      margin-right: 0.5rem;
-      vertical-align: middle;
+      white-space: nowrap;
+    }
+    .discussed-pill--yes {
+      background: rgba(245,128,37,0.12);
+      color: var(--s-orange);
+      border: 1px solid rgba(245,128,37,0.3);
+    }
+    .discussed-pill--no {
+      background: var(--s-palest);
+      color: var(--muted);
+      border: 1px solid var(--border);
     }
 
     .exclude-control {
@@ -355,6 +376,16 @@
       width: 14px; height: 14px;
       cursor: pointer;
       accent-color: var(--s-navy);
+    }
+
+    /* Highlight update textarea when deal was discussed */
+    .deal-block[data-mentioned="true"] .update-textarea {
+      border-color: rgba(245,128,37,0.4);
+      background: rgba(245,128,37,0.03);
+    }
+    .deal-block[data-mentioned="true"] .update-textarea:focus {
+      border-color: var(--s-orange);
+      background: var(--white);
     }
 
     .deal-field {
@@ -499,7 +530,7 @@
     }
   </style>
 </head>
-<body data-report-date="{{ report_date | e }}">
+<body data-report-date="{{ report_date | e }}" data-fy-week="{{ fy_week }}">
 
   <!-- ── Toolbar ──────────────────────────────────────────────────── -->
   <div class="toolbar no-print">
@@ -512,7 +543,6 @@
     </div>
     <div class="toolbar-actions">
       <span id="actionStatus"></span>
-      <button id="regenerateBtn" class="btn btn--regenerate" onclick="regenerate()">Regenerate</button>
       <button id="finaliseBtn"   class="btn btn--finalise"   onclick="finalise()">Finalise</button>
     </div>
   </div>
@@ -545,22 +575,6 @@
     </section>
     {% endif %}
 
-    <!-- ── 3. High-level summary (hidden until Regenerate) ───────── -->
-    <section class="report-section summary-section section--hidden" id="highLevelSection">
-      <h2 class="section-heading">High-Level Summary</h2>
-      <table class="summary-table">
-        <thead>
-          <tr>
-            <th>Deal</th>
-            <th>Stage</th>
-            <th>Status</th>
-            <th class="forecast-col">Forecast</th>
-          </tr>
-        </thead>
-        <tbody id="summaryTbody"></tbody>
-      </table>
-    </section>
-
     <!-- ── 4. Detailed updates ──────────────────────────────────── -->
     <section class="report-section updates-section">
       <h2 class="section-heading">Detailed Updates</h2>
@@ -570,7 +584,8 @@
         {%- set light = (item.stage_num == '2') -%}
         <div class="deal-block{% if item.excluded %} deal-block--excluded{% endif %}"
              data-deal="{{ item.deal | e }}"
-             data-mentioned="{{ 'true' if item.mentioned else 'false' }}">
+             data-mentioned="{{ 'true' if item.mentioned else 'false' }}"
+             style="border-left-color: {{ colour }}">
 
           <div class="deal-header">
             <h3 class="deal-title">{{ item.deal }}</h3>
@@ -578,6 +593,18 @@
                   style="background-color: {{ colour }}">
               {{ item.stage }}
             </span>
+            {% if item.mentioned %}
+              <span class="discussed-pill discussed-pill--yes">&#10003; Discussed</span>
+            {% else %}
+              <span class="discussed-pill discussed-pill--no">No update</span>
+            {% endif %}
+            {% if item.forecast or item.rep %}
+              <span class="deal-meta">
+                {% if item.forecast %}{{ item.forecast }}{% endif %}
+                {% if item.forecast and item.rep %}&nbsp;·&nbsp;{% endif %}
+                {% if item.rep %}{{ item.rep }}{% endif %}
+              </span>
+            {% endif %}
             <label class="exclude-control no-print">
               <input type="checkbox" class="exclude-checkbox"
                      {% if item.excluded %}checked{% endif %}>
@@ -655,12 +682,23 @@
     }
     initAutoResize();
 
+    /* ── Reorder deals: included first, excluded last ───────────────── */
+    function reorderDeals() {
+      const list = document.querySelector('.deals-list');
+      if (!list) return;
+      const blocks = [...list.querySelectorAll('.deal-block')];
+      const included = blocks.filter(b => !b.querySelector('.exclude-checkbox')?.checked);
+      const excluded  = blocks.filter(b =>  b.querySelector('.exclude-checkbox')?.checked);
+      [...included, ...excluded].forEach(b => list.appendChild(b));
+    }
+
     /* ── Exclude checkbox behaviour ─────────────────────────────────── */
     function initExclude() {
       document.querySelectorAll('.exclude-checkbox').forEach(cb => {
         cb.closest('.deal-block').classList.toggle('deal-block--excluded', cb.checked);
         cb.addEventListener('change', () => {
           cb.closest('.deal-block').classList.toggle('deal-block--excluded', cb.checked);
+          reorderDeals();
         });
       });
     }
@@ -673,9 +711,11 @@
         const summaryTA = block.querySelector('.summary-textarea');
         const updateTA  = block.querySelector('.update-textarea');
         const excludeCB = block.querySelector('.exclude-checkbox');
+        const rawUpdate = updateTA ? updateTA.value.trim() : '';
+        const hasUpdate = rawUpdate !== '' && rawUpdate !== 'No update.';
         deals.push({
           deal:          block.dataset.deal,
-          mentioned:     block.dataset.mentioned === 'true',
+          mentioned:     hasUpdate || block.dataset.mentioned === 'true',
           excluded:      excludeCB ? excludeCB.checked : false,
           summary_lines: summaryTA ? summaryTA.value.split('\n').filter(l => l.trim()) : [],
           update_lines:  updateTA  ? updateTA.value.split('\n').filter(l => l.trim())  : [],
@@ -691,131 +731,58 @@
         .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
-    /* ── Regenerate ─────────────────────────────────────────────────── */
-    async function regenerate() {
-      const btn    = document.getElementById('regenerateBtn');
+    /* ── Finalise: AI updates summaries → save → PDF download ──────── */
+    async function finalise() {
+      const btn    = document.getElementById('finaliseBtn');
       const status = document.getElementById('actionStatus');
       const upsellTA = document.getElementById('upsellTextarea');
 
       btn.disabled = true;
-      status.textContent = 'Regenerating… ~30s';
+      status.textContent = 'Saving & generating PDF… (~30s)';
       status.className = '';
 
+      const fyWeek    = parseInt(document.body.dataset.fyWeek, 10);
+      if (isNaN(fyWeek)) { status.textContent = '✗ Missing week number'; btn.disabled = false; return; }
+      const reportDate = document.body.dataset.reportDate || '';
+
       try {
-        const res = await fetch('/regenerate', {
+        const res = await fetch('/pdf', {
           method:  'POST',
           headers: {'Content-Type': 'application/json'},
           body:    JSON.stringify({
-            deals:        collectDeals(),
+            deals:       collectDeals(),
             upsell_items: upsellTA ? upsellTA.value.split('\n').filter(l => l.trim()) : [],
+            report_date: reportDate,
+            fy_week:     fyWeek,
           }),
         });
-        const data = await res.json();
-        if (!data.ok) throw new Error(data.error || 'Server error');
 
-        /* Update deal textareas */
-        const blockMap = {};
-        document.querySelectorAll('.deal-block').forEach(b => { blockMap[b.dataset.deal] = b; });
-        (data.deal_updates || []).forEach(item => {
-          const block = blockMap[item.deal];
-          if (!block) return;
-          const sTA = block.querySelector('.summary-textarea');
-          const uTA = block.querySelector('.update-textarea');
-          if (sTA) sTA.value = (item.summary_lines || []).join('\n');
-          if (uTA) uTA.value = (item.update_lines  || []).join('\n');
-        });
-
-        /* Update upsell */
-        if (upsellTA && data.upsell_items) {
-          upsellTA.value = data.upsell_items.join('\n');
+        if (!res.ok) {
+          let msg = 'PDF generation failed';
+          try { const d = await res.json(); msg = d.error || msg; } catch (_) {}
+          throw new Error(msg);
         }
 
-        /* Re-fit all textareas */
-        initAutoResize();
+        const blob = await res.blob();
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = `SM_Weekly_Report_Week_${fyWeek}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
 
-        /* Populate & reveal High Level Summary */
-        const tbody   = document.getElementById('summaryTbody');
-        const section = document.getElementById('highLevelSection');
-        if (tbody && data.high_level_summary) {
-          tbody.innerHTML = (data.high_level_summary || []).map(item => {
-            const colour  = stageColours[item.stage_num] || '#888888';
-            const isLight = item.stage_num === '2';
-            return `<tr>
-              <td class="deal-name-col">${esc(item.deal)}</td>
-              <td class="stage-col">
-                <span class="badge${isLight ? ' badge--light' : ''}" style="background-color:${colour}">
-                  ${esc(item.stage)}
-                </span>
-              </td>
-              <td>${esc(item.one_liner)}</td>
-              <td class="forecast-col">${esc(item.forecast || '')}</td>
-            </tr>`;
-          }).join('');
-        }
-        if (section) section.classList.remove('section--hidden');
-
-        status.textContent = '✓ Regenerated';
+        status.textContent = '✓ Saved & downloaded';
         status.className   = 'ok';
       } catch (e) {
         status.textContent = '✗ ' + e.message;
         status.className   = 'err';
       } finally {
         btn.disabled = false;
-        setTimeout(() => { status.textContent = ''; status.className = ''; }, 6000);
+        setTimeout(() => { status.textContent = ''; status.className = ''; }, 8000);
       }
     }
-
-    /* ── Finalise (save + print) ────────────────────────────────────── */
-    async function finalise() {
-      const btn    = document.getElementById('finaliseBtn');
-      const status = document.getElementById('actionStatus');
-      const today  = document.body.dataset.reportDate || new Date().toISOString().slice(0, 10);
-
-      btn.disabled = true;
-      status.textContent = 'Saving…';
-      status.className = '';
-
-      try {
-        const res = await fetch('/save', {
-          method:  'POST',
-          headers: {'Content-Type': 'application/json'},
-          body:    JSON.stringify({ run_date: today, deals: collectDeals() }),
-        });
-        const data = await res.json();
-        if (!data.ok) throw new Error(data.error || 'Save failed');
-
-        status.textContent = '✓ Saved — printing…';
-        status.className   = 'ok';
-        setTimeout(() => window.print(), 400);
-      } catch (e) {
-        status.textContent = '✗ ' + e.message;
-        status.className   = 'err';
-        btn.disabled = false;
-      }
-    }
-
-    /* ── Before print: sync textareas → print divs ──────────────────── */
-    function syncPrintDivs() {
-      document.querySelectorAll('.deal-block').forEach(block => {
-        const sTA = block.querySelector('.summary-textarea');
-        const uTA = block.querySelector('.update-textarea');
-        const sP  = block.querySelector('[data-print-for="summary"]');
-        const uP  = block.querySelector('[data-print-for="update"]');
-        if (sTA && sP) sP.innerHTML = sTA.value.split('\n').filter(l => l.trim()).map(l => `<p>${esc(l)}</p>`).join('');
-        if (uTA && uP) uP.innerHTML = uTA.value.split('\n').filter(l => l.trim()).map(l => `<p>${esc(l)}</p>`).join('');
-      });
-      const upsellTA    = document.getElementById('upsellTextarea');
-      const upsellPrint = document.getElementById('upsellPrint');
-      if (upsellTA && upsellPrint) {
-        upsellPrint.innerHTML = upsellTA.value.split('\n').filter(l => l.trim()).map(l => `<p>${esc(l)}</p>`).join('');
-      }
-    }
-
-    window.addEventListener('beforeprint', syncPrintDivs);
-    window.addEventListener('afterprint', () => {
-      const btn = document.getElementById('finaliseBtn');
-      if (btn) btn.disabled = false;
-    });
   </script>
 </body>
 </html>
