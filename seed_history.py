@@ -48,7 +48,7 @@ def extract_summaries(docx_path):
                 lines.append(after)
             continue
         if re.match(r"^update\s*:", text, re.IGNORECASE) and not _is_bold(p):
-            collecting = "update"
+            collecting = None  # this script only seeds summaries, not updates
             continue
         if (_is_bold(p) and len(text) < 100
                 and text.strip().lower().rstrip(":") not in
