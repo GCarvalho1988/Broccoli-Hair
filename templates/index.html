@@ -362,6 +362,12 @@
     .is-loading .spinner        { display: block; }
     .is-loading .btn-text       { opacity: 0.7; }
     .is-loading .status-message { display: block; }
+
+    /* ─── Drag-over state ───────────────────────────────────────────── */
+    .file-upload-wrapper.drag-over {
+      border-color: var(--navy);
+      background: var(--navy-lt);
+    }
   </style>
 </head>
 <body>
@@ -474,23 +480,49 @@
       const form = document.getElementById('reportForm');
       const btn  = document.getElementById('generateBtn');
       const form_wrapper = form.closest('.card-body') || form;
-
-      // Show loading state on the button area
       btn.disabled = true;
       form_wrapper.classList.add('is-loading');
-
-      // Let the form submit normally (full page navigation)
-      // — no need to prevent default
+      // Let form submit normally (full page navigation)
     }
 
     function updateFileLabel(input) {
       const label = document.getElementById('fileLabel');
-      if (input.files && input.files.length > 0) {
-        label.textContent = input.files[0].name;
-      } else {
-        label.textContent = 'Choose file or drop here';
-      }
+      label.textContent = (input.files && input.files.length > 0)
+        ? input.files[0].name
+        : 'Choose file or drop here';
     }
+
+    /* ── Drag-and-drop for the PDF upload area ── */
+    (function () {
+      const wrapper = document.querySelector('.file-upload-wrapper');
+      const input   = document.getElementById('portfolio_pdf');
+      if (!wrapper || !input) return;
+
+      wrapper.addEventListener('dragover', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        wrapper.classList.add('drag-over');
+      });
+      wrapper.addEventListener('dragleave', e => {
+        e.stopPropagation();
+        wrapper.classList.remove('drag-over');
+      });
+      wrapper.addEventListener('drop', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        wrapper.classList.remove('drag-over');
+        const file = e.dataTransfer && e.dataTransfer.files[0];
+        if (!file) return;
+        try {
+          const dt = new DataTransfer();
+          dt.items.add(file);
+          input.files = dt.files;
+        } catch (_) {
+          // DataTransfer not supported in very old browsers — fall back silently
+        }
+        updateFileLabel(input);
+      });
+    })();
   </script>
 
 </body>

@@ -24,44 +24,47 @@ def generate_quadrant(deals: list[dict]) -> str:
 
     points = _spread_points(points, min_dist=0.6, iterations=120)
 
-    with plt.xkcd():
-        fig, ax = plt.subplots(figsize=(12, 10))
+    plt.rcParams.update(plt.rcParamsDefault)
+    fig, ax = plt.subplots(figsize=(12, 10))
 
-        ax.axhspan(5, 10, xmin=0.5, xmax=1.0, alpha=0.06, color="green")
-        ax.axhspan(0,  5, xmin=0.0, xmax=0.5, alpha=0.06, color="red")
-        ax.axhline(5, color="#cccccc", linewidth=1, linestyle="--")
-        ax.axvline(5, color="#cccccc", linewidth=1, linestyle="--")
+    # Quadrant background shading
+    ax.axhspan(5, 10, xmin=0.5, xmax=1.0, alpha=0.06, color="green")
+    ax.axhspan(0,  5, xmin=0.0, xmax=0.5, alpha=0.06, color="red")
 
-        for pt in points:
-            ax.scatter(pt["x"], pt["y"], s=900, color=pt["colour"],
-                       alpha=0.85, zorder=3, edgecolors="white", linewidths=1.5)
-            ax.annotate(pt["label"], (pt["x"], pt["y"]),
-                        textcoords="offset points",
-                        xytext=_label_offset(pt["x"], pt["y"]),
-                        fontsize=9, fontweight="bold",
-                        ha="center", va="center",
-                        bbox=dict(boxstyle="round,pad=0.3",
-                                  fc="white", ec=pt["colour"],
-                                  alpha=0.9, linewidth=1.2))
+    # Quadrant dividers
+    ax.axhline(5, color="#cccccc", linewidth=1, linestyle="--")
+    ax.axvline(5, color="#cccccc", linewidth=1, linestyle="--")
 
-        ax.set_xlim(0, 10)
-        ax.set_ylim(0, 10)
-        ax.set_xlabel("Profitability →", fontsize=13, fontweight="bold")
-        ax.set_ylabel("Strategic Fit →", fontsize=13, fontweight="bold")
-        ax.set_title("Deal Quadrant Analysis", fontsize=16, fontweight="bold", pad=15)
-        ax.tick_params(labelsize=10)
+    for pt in points:
+        ax.scatter(pt["x"], pt["y"], s=900, color=pt["colour"],
+                   alpha=0.85, zorder=3, edgecolors="white", linewidths=1.5)
+        ax.annotate(pt["label"], (pt["x"], pt["y"]),
+                    textcoords="offset points",
+                    xytext=_label_offset(pt["x"], pt["y"]),
+                    fontsize=9, fontweight="bold",
+                    ha="center", va="center",
+                    bbox=dict(boxstyle="round,pad=0.3",
+                              fc="white", ec=pt["colour"],
+                              alpha=0.9, linewidth=1.2))
 
-        for txt, x, y in [("High Fit\nHigh Profit", 7.5, 7.5),
-                           ("High Fit\nLow Profit",  2.5, 7.5),
-                           ("Low Fit\nHigh Profit",  7.5, 2.5),
-                           ("Low Fit\nLow Profit",   2.5, 2.5)]:
-            ax.text(x, y, txt, fontsize=9, color="#aaaaaa",
-                    ha="center", va="center", style="italic")
+    ax.set_xlim(0, 10)
+    ax.set_ylim(0, 10)
+    ax.set_xlabel("Profitability →", fontsize=13, fontweight="bold")
+    ax.set_ylabel("Strategic Fit →", fontsize=13, fontweight="bold")
+    ax.set_title("Deal Quadrant Analysis", fontsize=16, fontweight="bold", pad=15)
+    ax.tick_params(labelsize=10)
 
-        plt.tight_layout()
-        buf = io.BytesIO()
-        fig.savefig(buf, format="png", dpi=120, bbox_inches="tight")
-        plt.close(fig)
+    for txt, x, y in [("High Fit\nHigh Profit", 7.5, 7.5),
+                       ("High Fit\nLow Profit",  2.5, 7.5),
+                       ("Low Fit\nHigh Profit",  7.5, 2.5),
+                       ("Low Fit\nLow Profit",   2.5, 2.5)]:
+        ax.text(x, y, txt, fontsize=9, color="#aaaaaa",
+                ha="center", va="center", style="italic")
+
+    plt.tight_layout()
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", dpi=120, bbox_inches="tight")
+    plt.close(fig)
 
     return base64.b64encode(buf.getvalue()).decode("utf-8")
 
