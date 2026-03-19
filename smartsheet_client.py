@@ -1,3 +1,5 @@
+import re
+
 import smartsheet
 from config import SMARTSHEET_API_KEY, PIPELINE_SHEET_ID, NON_DEALS
 
@@ -53,6 +55,5 @@ def _to_float(val) -> float | None:
 
 def _stage_number(stage: str) -> str:
     """Extract the leading digit from a stage string like '6 - Preferred Supplier'."""
-    import re
     m = re.match(r"(\d)", stage.strip())
     return m.group(1) if m else "0"
