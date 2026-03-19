@@ -32,14 +32,14 @@ def fetch_pipeline_data() -> list[dict]:
             continue
         if "closed" in stage.lower():
             continue
-        # Deduplicate (keep first occurrence of each deal name)
-        if name.lower() in seen_names:
-            continue
-        seen_names.add(name.lower())
         # Only include active pipeline stages 1–6
         stage_num = _stage_number(stage)
         if stage_num not in {"1", "2", "3", "4", "5", "6"}:
             continue
+        # Deduplicate: keep first *valid* (stage 1–6) occurrence
+        if name.lower() in seen_names:
+            continue
+        seen_names.add(name.lower())
 
         deals.append({
             "Opportunity":      name,
