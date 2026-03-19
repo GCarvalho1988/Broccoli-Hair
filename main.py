@@ -53,7 +53,6 @@ def generate():
     ai = draft_report_content(deals, transcript, portfolio_text, history)
 
     # Apply inclusion logic — filter deal_updates to only those that should appear
-    today = date.today().isoformat()
     filtered_updates = []
     for item in ai["deal_updates"]:
         mentioned = item.get("mentioned", False)
@@ -111,4 +110,4 @@ def save():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(debug=os.getenv("FLASK_DEBUG", "0") == "1", port=5000)
