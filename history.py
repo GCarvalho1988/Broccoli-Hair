@@ -37,6 +37,8 @@ def save_history(history: dict) -> None:
 
 def get_deal(name: str, history: dict) -> dict | None:
     """Return the history entry for a deal, or None. Uses fuzzy match."""
+    if not name:
+        return None
     k = _key(name)
     if k in history:
         return history[k]
