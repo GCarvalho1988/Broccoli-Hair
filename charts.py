@@ -55,10 +55,13 @@ def generate_quadrant(deals: list[dict]) -> str:
 
     ax.set_xlim(0, 10)
     ax.set_ylim(0, 10)
-    ax.set_xlabel("Profitability →", fontsize=13, fontweight="bold")
+    ax.set_xlabel("Revenue →", fontsize=13, fontweight="bold")
     ax.set_ylabel("Strategic Fit →", fontsize=13, fontweight="bold")
-    ax.set_title("Deal Quadrant Analysis", fontsize=16, fontweight="bold", pad=15)
-    ax.tick_params(labelsize=10)
+    ax.tick_params(labelbottom=False, labelleft=False, length=0)
+
+    # Remove all border spines
+    for spine in ax.spines.values():
+        spine.set_visible(False)
 
     quadrant_labels = [
         ("Flagship\nProjects",  7.5, 7.5, "#2E7D32"),
@@ -112,38 +115,55 @@ def _spread_points(points: list[dict], min_dist: float = 0.6,
 
 def _place_labels(points: list[dict]) -> list[tuple[float, float]]:
     """
-    Compute non-overlapping label positions in data coordinates using
-    bounding-box repulsion. Returns list of (x, y) parallel to points.
+    Compute non-overlapping label positions in data coordinates.
+    Uses bounding-box repulsion between labels AND between labels and dots.
+    Returns list of (x, y) parallel to points.
     """
-    # Initial placement: offset from dot based on which quadrant the dot is in
+    # Start labels well clear of their dot — direction based on quadrant
     positions = [
-        [pt["x"] + (0.8 if pt["x"] >= 5 else -0.8),
-         pt["y"] + (0.55 if pt["y"] >= 5 else -0.55)]
+        [pt["x"] + (1.8 if pt["x"] >= 5 else -1.8),
+         pt["y"] + (1.2 if pt["y"] >= 5 else -1.2)]
         for pt in points
     ]
 
-    # Approximate label half-sizes in data coordinates
-    lw, lh = 1.4, 0.42
+    # Half-sizes (data coords): label width ~1.2, height ~0.3; dot effective radius ~0.3
+    lw, lh, dot_r = 1.2, 0.30, 0.30
 
-    for _ in range(400):
+    for _ in range(500):
         moved = False
+
+        # ── Label–label repulsion ─────────────────────────────────────────────
         for i in range(len(positions)):
             for j in range(i + 1, len(positions)):
                 dx = positions[i][0] - positions[j][0]
                 dy = positions[i][1] - positions[j][1]
-                overlap_x = lw * 2 - abs(dx)
-                overlap_y = lh * 2 - abs(dy)
-                if overlap_x > 0 and overlap_y > 0:
-                    # Push along the axis with the smaller overlap
-                    if overlap_x < overlap_y:
-                        push = overlap_x * 0.5 * (1 if dx >= 0 else -1)
+                ox = lw * 2 - abs(dx)
+                oy = lh * 2 - abs(dy)
+                if ox > 0 and oy > 0:
+                    if ox < oy:
+                        push = ox * 0.5 * (1 if dx >= 0 else -1)
                         positions[i][0] += push
                         positions[j][0] -= push
                     else:
-                        push = overlap_y * 0.5 * (1 if dy >= 0 else -1)
+                        push = oy * 0.5 * (1 if dy >= 0 else -1)
                         positions[i][1] += push
                         positions[j][1] -= push
                     moved = True
+
+        # ── Label–dot repulsion (keep every label clear of every dot) ─────────
+        for i, pos in enumerate(positions):
+            for pt in points:
+                dx = pos[0] - pt["x"]
+                dy = pos[1] - pt["y"]
+                ox = (lw + dot_r) - abs(dx)
+                oy = (lh + dot_r) - abs(dy)
+                if ox > 0 and oy > 0:
+                    if ox < oy:
+                        pos[0] += ox * (1 if dx >= 0 else -1)
+                    else:
+                        pos[1] += oy * (1 if dy >= 0 else -1)
+                    moved = True
+
         for pos in positions:
             pos[0] = max(0.1, min(9.9, pos[0]))
             pos[1] = max(0.1, min(9.9, pos[1]))

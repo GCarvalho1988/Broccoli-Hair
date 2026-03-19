@@ -76,7 +76,7 @@
     .cover-page {
       display: flex;
       flex-direction: column;
-      height: 240mm;
+      height: 255mm;
     }
     .cover-images {
       flex: 1;
@@ -343,11 +343,6 @@
             <span class="deal-name">{{ item.deal }}</span>
             <span class="badge{% if light %} badge--light{% endif %}"
                   style="background-color:{{ colour }}">{{ item.stage }}</span>
-            {% if item.mentioned %}
-              <span class="discussed-pill discussed-pill--yes">&#10003; Discussed</span>
-            {% else %}
-              <span class="discussed-pill discussed-pill--no">No update</span>
-            {% endif %}
             {% if item.forecast or item.rep %}
             <span class="deal-meta">
               {% if item.forecast %}{{ item.forecast }}{% endif %}
