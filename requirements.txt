@@ -1,0 +1,8 @@
+flask
+smartsheet-python-sdk
+anthropic
+matplotlib
+pdfplumber
+python-dotenv
+playwright
+python-docx
