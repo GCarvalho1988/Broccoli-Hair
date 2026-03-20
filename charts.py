@@ -1,173 +1,147 @@
 """
-Generates the Strategic Fit vs Profitability quadrant chart.
+Generates the Strategic Fit vs Revenue quadrant chart as a 2x2 card grid.
 Returns a base64-encoded PNG string for embedding in HTML:
   <img src="data:image/png;base64,{{ quadrant_b64 }}">
 """
-import io, base64, math, random
+import io, base64
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 from config import STAGE_COLOURS
+
+# ── Layout constants ──────────────────────────────────────────────────────────
+_CHIPS_PER_ROW = 3
+_X_START       = 0.04   # left margin (axes fraction)
+_Y_START       = 0.80   # top of chip area, below zone header
+_COL_WIDTH     = 0.31   # horizontal step between chip columns
+_ROW_HEIGHT    = 0.17   # vertical step between chip rows
+_MAX_ROWS      = 4      # floor(0.80 / 0.17) = 4 rows visible
+
+# Font size tiers by number of deals in zone
+def _font_size(n: int) -> float:
+    if n <= 9:
+        return 8.5
+    if n <= 15:
+        return 7.5
+    return 6.5
+
+
+# Zone definitions: (label, row, col, bg_colour, header_colour)
+_ZONES = [
+    ("Strategy Plays",    0, 0, "#EEF4FB", "#1565C0"),
+    ("Flagship Projects", 0, 1, "#F1F8E9", "#2E7D32"),
+    ("Questionable",      1, 0, "#F5F5F5", "#888888"),
+    ("Core Revenue",      1, 1, "#E0F7FA", "#00838F"),
+]
 
 
 def generate_quadrant(deals: list[dict]) -> str:
-    """Return base64 PNG string of the quadrant chart."""
+    """Return base64 PNG string of the quadrant card grid, or '' if no plottable deals."""
     plottable = [d for d in deals
                  if d.get("Strategic Fit") is not None
                  and d.get("Profitability") is not None]
+    if not plottable:
+        return ""
 
-    points = [{"x": d["Profitability"],
-               "y": d["Strategic Fit"],
-               "label": d["Opportunity"],
-               "colour": STAGE_COLOURS.get(d.get("Stage Number", "0"), "#888888")}
-              for d in plottable]
+    # Assign each deal to a zone
+    zone_deals: dict[tuple[int, int], list[dict]] = {(r, c): [] for _, r, c, _, _ in _ZONES}
+    for d in plottable:
+        row = 0 if d["Strategic Fit"] >= 5.0 else 1
+        col = 1 if d["Profitability"] >= 5.0 else 0
+        zone_deals[(row, col)].append(d)
 
-    points = _spread_points(points, min_dist=0.6, iterations=120)
+    # Sort each zone by stage number descending (numeric)
+    for key in zone_deals:
+        zone_deals[key].sort(
+            key=lambda d: _stage_int(d.get("Stage Number", "0")),
+            reverse=True,
+        )
 
-    plt.rcParams.update(plt.rcParamsDefault)
-    fig, ax = plt.subplots(figsize=(12, 10))
+    fig = plt.figure(figsize=(12, 10))
+    gs  = gridspec.GridSpec(2, 2, figure=fig, hspace=0.08, wspace=0.08)
 
-    # Quadrant background shading
-    ax.axhspan(5, 10, xmin=0.5, xmax=1.0, alpha=0.06, color="green")
-    ax.axhspan(0,  5, xmin=0.0, xmax=0.5, alpha=0.06, color="red")
+    for label, row, col, bg, header_col in _ZONES:
+        ax = fig.add_subplot(gs[row, col])
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
+        ax.set_facecolor(bg)
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+        ax.tick_params(left=False, bottom=False,
+                       labelleft=False, labelbottom=False)
 
-    # Quadrant dividers
-    ax.axhline(5, color="#cccccc", linewidth=1, linestyle="--")
-    ax.axvline(5, color="#cccccc", linewidth=1, linestyle="--")
+        # Zone header
+        ax.text(0.04, 0.94, label.upper(),
+                transform=ax.transAxes,
+                fontsize=9, fontweight="bold",
+                color=header_col, alpha=0.55,
+                va="top", ha="left")
 
-    label_positions = _place_labels(points)
+        deals_in_zone = zone_deals[(row, col)]
+        if not deals_in_zone:
+            continue
 
-    for pt in points:
-        ax.scatter(pt["x"], pt["y"], s=1400, color=pt["colour"],
-                   alpha=0.85, zorder=3, edgecolors="white", linewidths=2)
+        fs       = _font_size(len(deals_in_zone))
+        capacity = _MAX_ROWS * _CHIPS_PER_ROW
+        visible  = deals_in_zone[:capacity]
+        overflow = len(deals_in_zone) - len(visible)
 
-    for pt, (lx, ly) in zip(points, label_positions):
-        ax.annotate(pt["label"], (pt["x"], pt["y"]),
-                    xytext=(lx, ly),
-                    textcoords="data",
-                    arrowprops=dict(arrowstyle="-", color="#aaaaaa",
-                                    lw=0.8, alpha=0.7),
-                    fontsize=10, fontweight="bold",
-                    ha="center", va="center",
-                    bbox=dict(boxstyle="round,pad=0.35",
-                              fc="white", ec=pt["colour"],
-                              alpha=0.95, linewidth=1.4))
+        for idx, d in enumerate(visible):
+            c = idx % _CHIPS_PER_ROW
+            r = idx // _CHIPS_PER_ROW
+            x = _X_START + c * _COL_WIDTH
+            y = _Y_START - r * _ROW_HEIGHT
+            colour = STAGE_COLOURS.get(d.get("Stage Number", "0"), "#888888")
+            ax.text(x, y, d["Opportunity"],
+                    transform=ax.transAxes,
+                    fontsize=fs, color="white", fontweight="bold",
+                    ha="left", va="center",
+                    bbox=dict(boxstyle="round,pad=0.3",
+                              facecolor=colour,
+                              edgecolor="none",
+                              alpha=0.92))
 
-    ax.set_xlim(0, 10)
-    ax.set_ylim(0, 10)
-    ax.set_xlabel("Revenue →", fontsize=13, fontweight="bold")
-    ax.set_ylabel("Strategic Fit →", fontsize=13, fontweight="bold")
-    ax.tick_params(labelbottom=False, labelleft=False, length=0)
+        if overflow > 0:
+            # "+N more" label at next chip position
+            next_idx = len(visible)
+            c = next_idx % _CHIPS_PER_ROW
+            r = next_idx // _CHIPS_PER_ROW
+            x = _X_START + c * _COL_WIDTH
+            y = _Y_START - r * _ROW_HEIGHT
+            ax.text(x, y, f"+{overflow} more",
+                    transform=ax.transAxes,
+                    fontsize=fs, color="#888888",
+                    ha="left", va="center",
+                    style="italic")
 
-    # Remove all border spines
-    for spine in ax.spines.values():
+    # Axis labels on a transparent overlay
+    overlay = fig.add_axes([0, 0, 1, 1], frameon=False)
+    overlay.set_xlim(0, 1)
+    overlay.set_ylim(0, 1)
+    overlay.tick_params(left=False, bottom=False,
+                        labelleft=False, labelbottom=False)
+    for spine in overlay.spines.values():
         spine.set_visible(False)
+    overlay.text(0.5, 0.02, "Revenue →",
+                 transform=overlay.transAxes,
+                 fontsize=13, fontweight="bold",
+                 ha="center", va="bottom")
+    overlay.text(0.02, 0.5, "Strategic Fit →",
+                 transform=overlay.transAxes,
+                 fontsize=13, fontweight="bold",
+                 ha="left", va="center", rotation=90)
 
-    quadrant_labels = [
-        ("Flagship\nProjects",  7.5, 7.5, "#2E7D32"),
-        ("Strategy\nPlays",     2.5, 7.5, "#1565C0"),
-        ("Core\nRevenue",       7.5, 2.5, "#00838F"),
-        ("Questionable",        2.5, 2.5, "#888888"),
-    ]
-    for txt, x, y, col in quadrant_labels:
-        ax.text(x, y, txt, fontsize=13, color=col, alpha=0.30,
-                ha="center", va="center", fontweight="bold",
-                linespacing=1.4)
-
-    plt.tight_layout()
+    plt.tight_layout(rect=[0.04, 0.04, 1, 1])
     buf = io.BytesIO()
     fig.savefig(buf, format="png", dpi=120, bbox_inches="tight")
     plt.close(fig)
-
     return base64.b64encode(buf.getvalue()).decode("utf-8")
 
 
-def _spread_points(points: list[dict], min_dist: float = 0.6,
-                   iterations: int = 120) -> list[dict]:
-    """Nudge overlapping points apart so labels don't stack."""
-    import copy
-    pts = copy.deepcopy(points)
-    for _ in range(iterations):
-        moved = False
-        for i in range(len(pts)):
-            for j in range(i + 1, len(pts)):
-                dx = pts[i]["x"] - pts[j]["x"]
-                dy = pts[i]["y"] - pts[j]["y"]
-                dist = math.hypot(dx, dy)
-                if dist < min_dist and dist > 0:
-                    factor = (min_dist - dist) / dist * 0.5
-                    pts[i]["x"] += dx * factor
-                    pts[i]["y"] += dy * factor
-                    pts[j]["x"] -= dx * factor
-                    pts[j]["y"] -= dy * factor
-                    moved = True
-                elif dist == 0:
-                    pts[i]["x"] += random.uniform(-0.05, 0.05)
-                    pts[i]["y"] += random.uniform(-0.05, 0.05)
-                    moved = True
-        for pt in pts:
-            pt["x"] = max(0.3, min(9.7, pt["x"]))
-            pt["y"] = max(0.3, min(9.7, pt["y"]))
-        if not moved:
-            break
-    return pts
-
-
-def _place_labels(points: list[dict]) -> list[tuple[float, float]]:
-    """
-    Compute non-overlapping label positions in data coordinates.
-    Uses bounding-box repulsion between labels AND between labels and dots.
-    Returns list of (x, y) parallel to points.
-    """
-    # Start labels well clear of their dot — direction based on quadrant
-    positions = [
-        [pt["x"] + (1.8 if pt["x"] >= 5 else -1.8),
-         pt["y"] + (1.2 if pt["y"] >= 5 else -1.2)]
-        for pt in points
-    ]
-
-    # Half-sizes (data coords): label width ~1.2, height ~0.3; dot effective radius ~0.3
-    lw, lh, dot_r = 1.2, 0.30, 0.30
-
-    for _ in range(500):
-        moved = False
-
-        # ── Label–label repulsion ─────────────────────────────────────────────
-        for i in range(len(positions)):
-            for j in range(i + 1, len(positions)):
-                dx = positions[i][0] - positions[j][0]
-                dy = positions[i][1] - positions[j][1]
-                ox = lw * 2 - abs(dx)
-                oy = lh * 2 - abs(dy)
-                if ox > 0 and oy > 0:
-                    if ox < oy:
-                        push = ox * 0.5 * (1 if dx >= 0 else -1)
-                        positions[i][0] += push
-                        positions[j][0] -= push
-                    else:
-                        push = oy * 0.5 * (1 if dy >= 0 else -1)
-                        positions[i][1] += push
-                        positions[j][1] -= push
-                    moved = True
-
-        # ── Label–dot repulsion (keep every label clear of every dot) ─────────
-        for i, pos in enumerate(positions):
-            for pt in points:
-                dx = pos[0] - pt["x"]
-                dy = pos[1] - pt["y"]
-                ox = (lw + dot_r) - abs(dx)
-                oy = (lh + dot_r) - abs(dy)
-                if ox > 0 and oy > 0:
-                    if ox < oy:
-                        pos[0] += ox * (1 if dx >= 0 else -1)
-                    else:
-                        pos[1] += oy * (1 if dy >= 0 else -1)
-                    moved = True
-
-        for pos in positions:
-            pos[0] = max(0.1, min(9.9, pos[0]))
-            pos[1] = max(0.1, min(9.9, pos[1]))
-        if not moved:
-            break
-
-    return [(pos[0], pos[1]) for pos in positions]
+def _stage_int(stage: str) -> int:
+    """Convert stage number string to int for sorting; unknown values → 0."""
+    try:
+        return int(stage)
+    except (ValueError, TypeError):
+        return 0
