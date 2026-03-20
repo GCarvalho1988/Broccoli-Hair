@@ -1,5 +1,4 @@
 # tests/test_charts.py
-import pytest
 from charts import generate_quadrant
 
 
