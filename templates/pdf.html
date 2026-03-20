@@ -3,9 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>S&amp;M Weekly Report — Week {{ fy_week }}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -28,9 +25,12 @@
     }
 
     body {
-      font-family: 'Barlow', Arial, sans-serif;
+      font-family: Arial, sans-serif;
       color: var(--body);
       background: var(--white);
+      /* Constrain to actual PDF content width (A4 210mm - 14mm×2 margins) so
+         percentage-based widths compute correctly in Playwright PDF rendering */
+      max-width: 182mm;
     }
 
     /* ── Page breaks ─────────────────────────────────────────────────────── */
@@ -72,42 +72,26 @@
       text-transform: uppercase;
     }
 
-    /* ── Cover page ──────────────────────────────────────────────────────── */
-    .cover-page {
-      display: flex;
-      flex-direction: column;
-      height: 255mm;
-    }
-    .cover-images {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 5mm;
-      overflow: hidden;
-    }
-    .cover-dashboard { flex: 55; overflow: hidden; }
-    .cover-quadrant  { flex: 45; overflow: hidden; }
-    .cover-dashboard img,
-    .cover-quadrant  img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      object-position: top center;
+    /* ── Cover images ─────────────────────────────────────────────────────── */
+    .cover-dashboard-img {
       display: block;
+      width: 100%;
+      height: auto;
     }
-    .cover-no-dashboard {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex: 1;
+    .cover-quadrant-img {
+      display: block;
+      width: 70%;
+      height: auto;
+      margin: 0 auto;
     }
 
     /* ── Section wrapper ─────────────────────────────────────────────────── */
     .section-card {
       border-top: 3px solid var(--orange);
       border-radius: 2px;
-      overflow: hidden;
       margin-bottom: 6mm;
+      break-inside: avoid;
+      page-break-inside: avoid;
     }
     .section-heading {
       font-family: 'Barlow Condensed', Arial Narrow, sans-serif;
@@ -263,29 +247,24 @@
       <span class="page-header-week">Week {{ fy_week }} &nbsp;·&nbsp; {{ report_date }}</span>
     </div>
 
-    <div class="cover-page">
-      {% if dashboard_b64 or quadrant_b64 %}
-      <div class="cover-images">
-        {% if dashboard_b64 %}
-        <div class="cover-dashboard">
-          <img src="data:image/png;base64,{{ dashboard_b64 }}" alt="Pipeline Dashboard">
-        </div>
-        {% endif %}
-        {% if quadrant_b64 %}
-        <div class="cover-quadrant">
-          <img src="data:image/png;base64,{{ quadrant_b64 }}" alt="Deal Quadrant">
-        </div>
-        {% endif %}
-      </div>
-      {% else %}
-      <div class="cover-no-dashboard" style="color: #999; font-size: 0.85rem;">
-        No dashboard image available for this report.
-      </div>
-      {% endif %}
+    {% if dashboard_b64 %}
+    <div class="section-card">
+      <div class="section-heading">Pipeline Dashboard</div>
+      <img class="cover-dashboard-img" src="data:image/png;base64,{{ dashboard_b64 }}" alt="Pipeline Dashboard">
     </div>
+    {% else %}
+    <p style="color:#999; font-size:0.85rem; padding:6mm;">No dashboard image available for this report.</p>
+    {% endif %}
+
+    {% if quadrant_b64 %}
+    <div class="section-card">
+      <div class="section-heading">Deal Quadrant</div>
+      <img class="cover-quadrant-img" src="data:image/png;base64,{{ quadrant_b64 }}" alt="Deal Quadrant">
+    </div>
+    {% endif %}
   </div>
 
-  {# ── Page 2: High-Level Summary ─────────────────────────────────────────── #}
+  {# ── Page 3: High-Level Summary ─────────────────────────────────────────── #}
   <div class="page-break">
     <div class="page-header">
       <span class="page-header-wordmark">Sectra</span>
