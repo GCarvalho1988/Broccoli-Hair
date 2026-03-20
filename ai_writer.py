@@ -14,6 +14,24 @@ from history import get_deal
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 
+def _html_to_text(html: str) -> str:
+    """Strip HTML, preserving block boundaries as newlines.
+
+    Quill emits empty paragraphs as <p><br></p>, which produces two newlines
+    (one from <br>, one from </p>). The \\n{3,} collapse fires for 3+, so
+    empty paragraphs appear as blank lines. This is intentional.
+    """
+    text = re.sub(r'</p>|</li>|<br\s*/?>', '\n', html or '', flags=re.IGNORECASE)
+    text = re.sub(r'<[^>]+>', '', text)
+    text = re.sub(r'\n{3,}', '\n\n', text).strip()
+    return text
+
+
+def _lines_to_html(lines: list[str]) -> str:
+    """Wrap plain text lines in <p> tags."""
+    return ''.join(f'<p>{line}</p>' for line in lines if line.strip())
+
+
 # ─── 1. Draft updates from transcript ────────────────────────────────────────
 
 def draft_updates_from_transcript(deals: list[dict], transcript: str,
@@ -310,10 +328,12 @@ def _format_summaries(deals: list[dict], history: dict) -> str:
     lines = []
     for d in deals:
         entry = get_deal(d["Opportunity"], history)
-        if entry and entry.get("summary_lines"):
+        summary_text = _html_to_text(entry.get("summary_html", "")) if entry else ""
+        if summary_text.strip():
             lines.append(f"\n{d['Opportunity']}:")
-            for s in entry["summary_lines"]:
-                lines.append(f"  - {s}")
+            for s in summary_text.split('\n'):
+                if s.strip():
+                    lines.append(f"  - {s.strip()}")
         else:
             lines.append(f"\n{d['Opportunity']}: (no summary on record)")
     return "\n".join(lines)
@@ -335,12 +355,16 @@ def _parse_response(raw: str, deals: list[dict], history: dict) -> dict:
     for d in deals:
         if d["Opportunity"].lower() not in existing:
             entry = get_deal(d["Opportunity"], history)
+            summary_lines = (
+                [l for l in _html_to_text(entry.get("summary_html", "")).splitlines() if l.strip()]
+                if entry else []
+            )
             data.setdefault("deal_updates", []).append({
                 "deal": d["Opportunity"],
                 "mentioned": False,
                 "update_lines": ["No update."],
                 "summary_action": "unchanged",
-                "summary_lines": entry.get("summary_lines", []) if entry else [],
+                "summary_lines": summary_lines,
             })
 
     return data
@@ -350,11 +374,15 @@ def _empty_result(deals: list[dict], history: dict) -> dict:
     updates = []
     for d in deals:
         entry = get_deal(d["Opportunity"], history)
+        summary_lines = (
+            [l for l in _html_to_text(entry.get("summary_html", "")).splitlines() if l.strip()]
+            if entry else []
+        )
         updates.append({
             "deal": d["Opportunity"],
             "mentioned": False,
             "update_lines": ["No update."],
             "summary_action": "unchanged",
-            "summary_lines": entry.get("summary_lines", []) if entry else [],
+            "summary_lines": summary_lines,
         })
     return {"deal_updates": updates}
