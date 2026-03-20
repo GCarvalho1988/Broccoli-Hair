@@ -4,8 +4,8 @@ Manages reports/history.json.
 Per-deal structure:
 {
   "display_name": "North Central London (Radiology)",
-  "summary_lines": ["line1", ...],
-  "last_update_lines": ["line1", ...],
+  "summary_html": "<p>line1</p>",
+  "last_update_html": "<p>line1</p>",
   "last_discussed_date": "2026-03-13",
   "last_included_date": "2026-03-13"
 }
@@ -25,8 +25,24 @@ def _key(name: str) -> str:
 def load_history() -> dict:
     if os.path.exists(HISTORY_FILE):
         with open(HISTORY_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {"_meta": {"last_run_date": None}}
+            history = json.load(f)
+    else:
+        history = {"_meta": {"last_run_date": None}}
+    # Migrate old plain-text arrays to HTML strings
+    for key, entry in history.items():
+        if key == "_meta":
+            continue
+        if "summary_lines" in entry and "summary_html" not in entry:
+            entry["summary_html"] = "".join(
+                f"<p>{l}</p>" for l in entry["summary_lines"] if l.strip()
+            )
+            entry.pop("summary_lines")
+        if "last_update_lines" in entry and "last_update_html" not in entry:
+            entry["last_update_html"] = "".join(
+                f"<p>{l}</p>" for l in entry["last_update_lines"] if l.strip()
+            )
+            entry.pop("last_update_lines")
+    return history
 
 
 def save_history(history: dict) -> None:
@@ -85,7 +101,7 @@ def should_include(name: str, history: dict, discussed: bool) -> bool:
 
 
 def update_deal(history: dict, name: str, *,
-                summary_lines=None, update_lines=None,
+                summary_html=None, update_html=None,
                 discussed: bool = False,
                 report_date: str = None) -> None:
     """Write back a deal's data after a report run."""
@@ -95,10 +111,10 @@ def update_deal(history: dict, name: str, *,
         history[k] = {"display_name": name.strip()}
     entry = history[k]
     entry["display_name"] = name.strip()
-    if summary_lines is not None:
-        entry["summary_lines"] = summary_lines
-    if update_lines is not None:
-        entry["last_update_lines"] = update_lines
+    if summary_html is not None:
+        entry["summary_html"] = summary_html
+    if update_html is not None:
+        entry["last_update_html"] = update_html
     entry["last_included_date"] = today
     if discussed:
         entry["last_discussed_date"] = today
