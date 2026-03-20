@@ -224,7 +224,7 @@ def generate_pdf():
             print(f"Dashboard resize failed: {e}")
     if quadrant_b64:
         try:
-            quadrant_b64 = _resize_b64_image(quadrant_b64, 900, 750)
+            quadrant_b64 = _resize_b64_image(quadrant_b64, 900, 900)
         except Exception as e:
             print(f"Quadrant resize failed: {e}")
 

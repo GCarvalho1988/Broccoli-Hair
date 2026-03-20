@@ -16,8 +16,8 @@ _CHIPS_PER_ROW = 2
 _X_START       = 0.04   # left margin (axes fraction)
 _Y_START       = 0.80   # top of chip area, below zone header
 _COL_WIDTH     = 0.48   # horizontal step between chip columns
-_ROW_HEIGHT    = 0.16   # vertical step between chip rows (tall enough for 2-line chips)
-_MAX_ROWS      = 5      # floor(0.80 / 0.16) = 5 rows visible
+_ROW_HEIGHT    = 0.11   # vertical step between chip rows (tall enough for 2-line chips)
+_MAX_ROWS      = 7      # floor(0.80 / 0.11) = 7 rows visible
 _WRAP_CHARS    = 20     # wrap deal names at this many characters per line
 
 
@@ -77,7 +77,7 @@ def generate_quadrant(deals: list[dict]) -> str:
             reverse=True,
         )
 
-    fig = plt.figure(figsize=(12, 10))
+    fig = plt.figure(figsize=(12, 12))
     gs  = gridspec.GridSpec(2, 2, figure=fig, hspace=0.08, wspace=0.08)
 
     for label, row, col, bg, header_col in _ZONES:
