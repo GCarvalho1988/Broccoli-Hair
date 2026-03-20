@@ -99,7 +99,13 @@ def generate():
 
     # ── Pipeline data + chart ─────────────────────────────────────────────────
     deals = fetch_pipeline_data()
-    quadrant_b64 = generate_quadrant(deals)
+    try:
+        quadrant_b64 = generate_quadrant(deals)
+        if not quadrant_b64:
+            print(f"Quadrant: no plottable deals — Strategic Fit/Profitability missing for all {len(deals)} deals")
+    except Exception as e:
+        print(f"Quadrant generation failed: {e}")
+        quadrant_b64 = None
 
     # ── Deal updates: transcript path vs. no-transcript path ─────────────────
     history        = load_history()

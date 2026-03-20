@@ -413,27 +413,6 @@
     /* ─── Upsell ─────────────────────────────────────────────────────── */
     .upsell-body { padding: 0.75rem 1.5rem 1rem; }
 
-    .upsell-textarea {
-      font-family: var(--font-body);
-      font-size: 0.875rem;
-      font-weight: 300;
-      line-height: 1.7;
-      color: var(--body);
-      background: var(--s-palest);
-      border: 1.5px solid var(--border);
-      border-radius: 2px;
-      padding: 0.6rem 0.85rem;
-      resize: none;
-      overflow: hidden;
-      min-height: 3rem;
-      width: 100%;
-    }
-    .upsell-textarea:focus {
-      outline: none;
-      border-color: var(--s-cyan);
-      background: var(--white);
-    }
-
     /* ─── Print ──────────────────────────────────────────────────────── */
     .print-only { display: none; }
 
@@ -469,19 +448,8 @@
       .deal-block { padding: 0.85rem 0; break-inside: avoid; }
       .deal-title { font-size: 0.95rem; }
 
-      .ql-toolbar      { display: none !important; }
-      .ql-container    { border: none !important; }
-      .upsell-textarea { display: none !important; }
-      .print-only      { display: block !important; }
-
-      .print-content {
-        font-size: 9pt;
-        font-weight: 300;
-        line-height: 1.6;
-        color: var(--body);
-      }
-      .print-content p { margin: 0; }
-      .print-content p + p { margin-top: 0.2rem; }
+      .ql-toolbar   { display: none !important; }
+      .ql-container { border: none !important; }
 
       .field-label { display: none !important; }
       .print-label {
@@ -622,11 +590,7 @@
     <section class="report-section upsell-section">
       <h2 class="section-heading">Upsell &amp; Other Updates</h2>
       <div class="upsell-body">
-        <textarea class="upsell-textarea no-print" id="upsellTextarea"
-                  placeholder="One item per line…">{{ upsell_items | join('\n') }}</textarea>
-        <div class="print-content print-only" id="upsellPrint">
-          {% for item in upsell_items %}<p>{{ item }}</p>{% endfor %}
-        </div>
+        <div id="upsellEditor" data-seed="{{ upsell_items | tojson | e }}"></div>
       </div>
     </section>
 
@@ -660,27 +624,47 @@
             const lines = JSON.parse(seed);
             if (lines && lines.length) {
               const html = '<p>' + lines.join('</p><p>') + '</p>';
-              quill.clipboard.dangerouslyPasteHTML(html);
+              // Quill 2.x: dangerouslyPasteHTML was removed; use convert + setContents
+              const delta = quill.clipboard.convert({ html });
+              quill.setContents(delta);
             }
           } catch (e) { /* ignore parse errors */ }
         }
       }
     });
+
+    /* ── Initialise upsell Quill editor ────────────────────────────── */
+    const upsellContainer = document.getElementById('upsellEditor');
+    if (upsellContainer) {
+      const upsellQuill = new Quill(upsellContainer, {
+        theme: 'snow',
+        modules: { toolbar: QUILL_TOOLBAR },
+        placeholder: 'One item per line…',
+      });
+      upsellContainer._quill = upsellQuill;
+      const upsellSeed = upsellContainer.dataset.seed;
+      if (upsellSeed) {
+        try {
+          const items = JSON.parse(upsellSeed);
+          if (items && items.length) {
+            const html = '<p>' + items.join('</p><p>') + '</p>';
+            const delta = upsellQuill.clipboard.convert({ html });
+            upsellQuill.setContents(delta);
+          }
+        } catch (e) { /* ignore parse errors */ }
+      }
+    }
   </script>
 
   <script>
-    /* ── Auto-resize textareas ──────────────────────────────────────── */
-    function autoResize(ta) {
-      ta.style.height = 'auto';
-      ta.style.height = ta.scrollHeight + 'px';
+    /* ── Quill HTML → plain text lines (for upsell collection) ─────── */
+    function _quillHtmlToLines(html) {
+      const text = (html || '')
+        .replace(/<\/p>|<\/li>|<br\s*\/?>/gi, '\n')
+        .replace(/<[^>]+>/g, '')
+        .replace(/\u00a0/g, ' ');
+      return text.split('\n').map(l => l.trim()).filter(l => l);
     }
-    function initAutoResize() {
-      document.querySelectorAll('.upsell-textarea').forEach(ta => {
-        autoResize(ta);
-        ta.addEventListener('input', () => autoResize(ta));
-      });
-    }
-    initAutoResize();
 
     /* ── Reorder deals: included first, excluded last ───────────────── */
     function reorderDeals() {
@@ -741,7 +725,7 @@
     async function finalise() {
       const btn    = document.getElementById('finaliseBtn');
       const status = document.getElementById('actionStatus');
-      const upsellTA = document.getElementById('upsellTextarea');
+      const upsellEl = document.getElementById('upsellEditor');
 
       btn.disabled = true;
       status.textContent = 'Saving & generating PDF… (~30s)';
@@ -757,7 +741,7 @@
           headers: {'Content-Type': 'application/json'},
           body:    JSON.stringify({
             deals:       collectDeals(),
-            upsell_items: upsellTA ? upsellTA.value.split('\n').filter(l => l.trim()) : [],
+            upsell_items: _quillHtmlToLines(upsellEl?._quill?.root.innerHTML ?? ''),
             report_date: reportDate,
             fy_week:     fyWeek,
           }),

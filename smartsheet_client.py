@@ -49,7 +49,7 @@ def fetch_pipeline_data() -> list[dict]:
             "Next Step":        row_data.get("Next Step", ""),
             "Expected Close":   row_data.get("Expected Close Date", ""),
             "Strategic Fit":    _to_float(row_data.get("Strategic Fit")),
-            "Profitability":    _to_float(row_data.get("Profitability")),
+            "Profitability":    _to_float(row_data.get("Revenue")),
             "Stage Number":     stage_num,
         })
     return deals
