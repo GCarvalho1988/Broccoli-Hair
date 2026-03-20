@@ -11,6 +11,7 @@ import matplotlib.gridspec as gridspec
 from config import STAGE_COLOURS
 
 # ── Layout constants ──────────────────────────────────────────────────────────
+# Invariant: _MAX_ROWS * _ROW_HEIGHT <= _Y_START (overflow label stays in axes)
 _CHIPS_PER_ROW = 3
 _X_START       = 0.04   # left margin (axes fraction)
 _Y_START       = 0.80   # top of chip area, below zone header
@@ -18,13 +19,22 @@ _COL_WIDTH     = 0.31   # horizontal step between chip columns
 _ROW_HEIGHT    = 0.17   # vertical step between chip rows
 _MAX_ROWS      = 4      # floor(0.80 / 0.17) = 4 rows visible
 
-# Font size tiers by number of deals in zone
+
 def _font_size(n: int) -> float:
+    """Return chip font size (pt) based on number of deals in zone."""
     if n <= 9:
         return 8.5
     if n <= 15:
         return 7.5
     return 6.5
+
+
+def _stage_int(stage: str) -> int:
+    """Convert stage number string to int for sorting; unknown values → 0."""
+    try:
+        return int(stage)
+    except (ValueError, TypeError):
+        return 0
 
 
 # Zone definitions: (label, row, col, bg_colour, header_colour)
@@ -44,7 +54,8 @@ def generate_quadrant(deals: list[dict]) -> str:
     if not plottable:
         return ""
 
-    # Assign each deal to a zone
+    # Assign each deal to a zone.
+    # Note: Profitability is the Smartsheet field name; it maps to the "Revenue" axis label.
     zone_deals: dict[tuple[int, int], list[dict]] = {(r, c): [] for _, r, c, _, _ in _ZONES}
     for d in plottable:
         row = 0 if d["Strategic Fit"] >= 5.0 else 1
@@ -115,7 +126,8 @@ def generate_quadrant(deals: list[dict]) -> str:
                     ha="left", va="center",
                     style="italic")
 
-    # Axis labels on a transparent overlay
+    # Axis labels on a transparent overlay.
+    # bbox_inches="tight" on savefig handles figure cropping — no tight_layout needed.
     overlay = fig.add_axes([0, 0, 1, 1], frameon=False)
     overlay.set_xlim(0, 1)
     overlay.set_ylim(0, 1)
@@ -123,25 +135,16 @@ def generate_quadrant(deals: list[dict]) -> str:
                         labelleft=False, labelbottom=False)
     for spine in overlay.spines.values():
         spine.set_visible(False)
-    overlay.text(0.5, 0.02, "Revenue →",
+    overlay.text(0.5, 0.02, "Revenue \u2192",
                  transform=overlay.transAxes,
                  fontsize=13, fontweight="bold",
                  ha="center", va="bottom")
-    overlay.text(0.02, 0.5, "Strategic Fit →",
+    overlay.text(0.02, 0.5, "Strategic Fit \u2192",
                  transform=overlay.transAxes,
                  fontsize=13, fontweight="bold",
                  ha="left", va="center", rotation=90)
 
-    plt.tight_layout(rect=[0.04, 0.04, 1, 1])
     buf = io.BytesIO()
     fig.savefig(buf, format="png", dpi=120, bbox_inches="tight")
     plt.close(fig)
     return base64.b64encode(buf.getvalue()).decode("utf-8")
-
-
-def _stage_int(stage: str) -> int:
-    """Convert stage number string to int for sorting; unknown values → 0."""
-    try:
-        return int(stage)
-    except (ValueError, TypeError):
-        return 0
