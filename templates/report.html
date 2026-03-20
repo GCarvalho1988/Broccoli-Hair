@@ -403,27 +403,6 @@
       font-weight: 700;
     }
 
-    .field-textarea {
-      font-family: var(--font-body);
-      font-size: 0.855rem;
-      font-weight: 300;
-      line-height: 1.65;
-      color: var(--body);
-      background: var(--s-palest);
-      border: 1.5px solid var(--border);
-      border-radius: 2px;
-      padding: 0.5rem 0.75rem;
-      resize: none;
-      overflow: hidden;
-      min-height: 2.5rem;
-      width: 100%;
-      transition: border-color 0.15s, background 0.15s;
-    }
-    .field-textarea:focus {
-      outline: none;
-      border-color: var(--s-cyan);
-      background: var(--white);
-    }
     .ql-editor {
       min-height: 60px;
       height: auto;
@@ -490,7 +469,8 @@
       .deal-block { padding: 0.85rem 0; break-inside: avoid; }
       .deal-title { font-size: 0.95rem; }
 
-      .field-textarea  { display: none !important; }
+      .ql-toolbar      { display: none !important; }
+      .ql-container    { border: none !important; }
       .upsell-textarea { display: none !important; }
       .print-only      { display: block !important; }
 
