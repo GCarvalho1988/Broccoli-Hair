@@ -235,6 +235,12 @@
       text-indent: -0.8em;
     }
     .upsell-line::before { content: "–  "; color: var(--muted); }
+    /* ── Rich text HTML from Quill ────────────────────────────────────── */
+    .deal-summary p, .deal-update p { margin: 0 0 4px 0; }
+    .deal-summary ul, .deal-update ul,
+    .deal-summary ol, .deal-update ol  { margin: 2px 0 4px 0; padding-left: 1.2em; }
+    .deal-summary li, .deal-update li  { margin-bottom: 2px; }
+    /* Highlight: Quill emits inline style="background-color:..." — no rule needed */
   </style>
 </head>
 <body>
@@ -331,28 +337,17 @@
             {% endif %}
           </div>
 
-          {% if item.summary_lines %}
+          {% if item.summary_html %}
           <div class="deal-section">
             <div class="deal-section-label">Summary</div>
-            <div class="deal-section-lines">
-              {% for line in item.summary_lines %}
-              <div class="deal-line">{{ line }}</div>
-              {% endfor %}
-            </div>
+            <div class="deal-summary deal-section-lines">{{ item.summary_html | safe }}</div>
           </div>
           {% endif %}
 
-          {% set real_updates = item.update_lines | selectattr('__str__', 'ne', 'No update.') | list %}
-          {% if item.update_lines and (item.update_lines | join('') | trim) and item.update_lines != ['No update.'] %}
+          {% if item.update_html %}
           <div class="deal-section">
             <div class="deal-section-label">Update</div>
-            <div class="deal-section-lines">
-              {% for line in item.update_lines %}
-              {% if line.strip() and line.strip() != 'No update.' %}
-              <div class="deal-line">{{ line }}</div>
-              {% endif %}
-              {% endfor %}
-            </div>
+            <div class="deal-update deal-section-lines">{{ item.update_html | safe }}</div>
           </div>
           {% endif %}
         </div>
