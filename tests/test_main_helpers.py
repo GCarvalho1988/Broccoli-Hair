@@ -2,9 +2,6 @@
 # Tests for module-level helpers that will be added to main.py.
 # Import them from main to confirm they exist and work.
 
-import pytest
-
-
 def test_html_is_empty_with_quill_empty_paragraph():
     from main import _html_is_empty
     assert _html_is_empty("<p><br></p>") is True

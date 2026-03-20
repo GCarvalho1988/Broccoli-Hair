@@ -182,7 +182,6 @@ def generate_pdf():
         }
         for item in client_deals
         if item.get("update_html") and not item.get("excluded", False)
-        and not _html_is_empty(item.get("update_html", ""))
     ]
     if deals_needing_update:
         try:
