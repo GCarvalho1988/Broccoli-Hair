@@ -3,7 +3,7 @@ Generates the Strategic Fit vs Revenue quadrant chart as a 2x2 card grid.
 Returns a base64-encoded PNG string for embedding in HTML:
   <img src="data:image/png;base64,{{ quadrant_b64 }}">
 """
-import io, base64
+import io, base64, textwrap
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -16,8 +16,9 @@ _CHIPS_PER_ROW = 2
 _X_START       = 0.04   # left margin (axes fraction)
 _Y_START       = 0.80   # top of chip area, below zone header
 _COL_WIDTH     = 0.48   # horizontal step between chip columns
-_ROW_HEIGHT    = 0.13   # vertical step between chip rows
-_MAX_ROWS      = 6      # floor(0.80 / 0.13) = 6 rows visible
+_ROW_HEIGHT    = 0.16   # vertical step between chip rows (tall enough for 2-line chips)
+_MAX_ROWS      = 5      # floor(0.80 / 0.16) = 5 rows visible
+_WRAP_CHARS    = 20     # wrap deal names at this many characters per line
 
 
 def _font_size(n: int) -> float:
@@ -37,10 +38,11 @@ def _stage_int(stage: str) -> int:
         return 0
 
 
-def _truncate(name: str, max_chars: int = 26) -> str:
-    """Truncate a deal name to fit within a chip column; collapse newlines."""
-    name = name.replace("\n", " ").replace("\r", "")
-    return name if len(name) <= max_chars else name[:max_chars - 1] + "\u2026"
+def _wrap(name: str) -> str:
+    """Wrap a deal name to at most 2 lines; collapse any embedded newlines first."""
+    name = name.replace("\n", " ").replace("\r", "").strip()
+    lines = textwrap.wrap(name, width=_WRAP_CHARS)
+    return "\n".join(lines[:2])  # max 2 lines
 
 
 # Zone definitions: (label, row, col, bg_colour, header_colour)
@@ -110,7 +112,7 @@ def generate_quadrant(deals: list[dict]) -> str:
             x = _X_START + c * _COL_WIDTH
             y = _Y_START - r * _ROW_HEIGHT
             colour = STAGE_COLOURS.get(d.get("Stage Number", "0"), "#888888")
-            ax.text(x, y, _truncate(d["Opportunity"]),
+            ax.text(x, y, _wrap(d["Opportunity"]),
                     transform=ax.transAxes,
                     fontsize=fs, color="white", fontweight="bold",
                     ha="left", va="center",

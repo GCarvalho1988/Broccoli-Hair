@@ -1,6 +1,7 @@
-import os, base64
+import os, base64, io
 from datetime import date
 from flask import Flask, render_template, request, jsonify, session
+from PIL import Image
 
 from config import STAGE_COLOURS
 from smartsheet_client import fetch_pipeline_data
@@ -19,6 +20,16 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY", "broccoli-hair-dev")
 
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "uploads")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+
+def _resize_b64_image(b64: str, max_width: int, max_height: int) -> str:
+    """Resize a base64 PNG so it fits within max_width x max_height, preserving aspect ratio."""
+    data = base64.b64decode(b64)
+    img = Image.open(io.BytesIO(data))
+    img.thumbnail((max_width, max_height), Image.LANCZOS)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG", optimize=True)
+    return base64.b64encode(buf.getvalue()).decode("utf-8")
 
 
 def _report_date_str() -> str:
@@ -104,7 +115,7 @@ def generate():
                 "update_lines":   [],
                 "summary_action": "unchanged",
                 "summary_lines":  entry.get("summary_lines", []) if entry else [],
-                "excluded":       not should_include(d["Opportunity"], history, discussed=False),
+                "excluded":       False,
             })
         _enrich_stage(all_updates, deal_stage_map)
 
@@ -203,6 +214,19 @@ def generate_pdf():
     except Exception as e:
         print(f"Quadrant generation failed: {e}")
         quadrant_b64 = None
+
+    # Resize images to fixed pixel dimensions so Playwright renders them correctly
+    # Dashboard: 1400px wide max (full width); Quadrant: 900x750px max (70% width slot)
+    if dashboard_b64:
+        try:
+            dashboard_b64 = _resize_b64_image(dashboard_b64, 1400, 600)
+        except Exception as e:
+            print(f"Dashboard resize failed: {e}")
+    if quadrant_b64:
+        try:
+            quadrant_b64 = _resize_b64_image(quadrant_b64, 900, 750)
+        except Exception as e:
+            print(f"Quadrant resize failed: {e}")
 
     # ── 5. High-level summary ─────────────────────────────────────────────────
     non_excluded = [
