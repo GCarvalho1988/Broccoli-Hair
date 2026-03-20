@@ -302,7 +302,7 @@
     .deal-block:last-child { border-bottom: none; }
 
     .deal-block--excluded { opacity: var(--excluded-op); }
-    .deal-block--excluded .field-textarea { pointer-events: none; }
+    .deal-block--excluded .ql-editor { pointer-events: none; }
 
     /* Discussed deals: subtle warm tint */
     .deal-block[data-mentioned="true"] {
@@ -378,16 +378,6 @@
       accent-color: var(--s-navy);
     }
 
-    /* Highlight update textarea when deal was discussed */
-    .deal-block[data-mentioned="true"] .update-textarea {
-      border-color: rgba(245,128,37,0.4);
-      background: rgba(245,128,37,0.03);
-    }
-    .deal-block[data-mentioned="true"] .update-textarea:focus {
-      border-color: var(--s-orange);
-      background: var(--white);
-    }
-
     .deal-field {
       display: grid;
       grid-template-columns: 90px 1fr;
@@ -434,8 +424,12 @@
       border-color: var(--s-cyan);
       background: var(--white);
     }
-    .summary-textarea { min-height: 3rem; }
-    .ai-draft .field-textarea { border-color: var(--s-orange); background: var(--ai-bg); }
+    .ql-editor {
+      min-height: 60px;
+      height: auto;
+    }
+    .ql-container { font-family: var(--font-body); font-size: 0.875rem; }
+    .ai-draft .ql-container { border-color: var(--s-orange); background: var(--ai-bg); }
 
     /* ─── Upsell ─────────────────────────────────────────────────────── */
     .upsell-body { padding: 0.75rem 1.5rem 1rem; }
@@ -525,10 +519,11 @@
       .updates-section   { page-break-before: always; }
 
       a { text-decoration: none; color: inherit; }
-      .ai-draft .field-textarea,
+      .ai-draft .ql-container,
       .ai-draft { border-color: var(--border) !important; background: transparent !important; }
     }
   </style>
+  <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet" />
 </head>
 <body data-report-date="{{ report_date | e }}" data-fy-week="{{ fy_week }}">
 
@@ -624,11 +619,8 @@
             </label>
             <div class="print-label print-only">Summary</div>
             <div>
-              <textarea class="field-textarea summary-textarea"
-                        data-field="summary">{{ item.summary_lines | join('\n') }}</textarea>
-              <div class="print-content print-only" data-print-for="summary">
-                {% for line in item.summary_lines %}<p>{{ line }}</p>{% endfor %}
-              </div>
+              <div class="quill-editor" data-field="summary"
+                   data-seed="{{ item.summary_lines | tojson | e }}"></div>
             </div>
           </div>
 
@@ -637,11 +629,7 @@
             <label class="field-label no-print">Update</label>
             <div class="print-label print-only">Update</div>
             <div>
-              <textarea class="field-textarea update-textarea"
-                        data-field="update">{{ item.update_lines | join('\n') }}</textarea>
-              <div class="print-content print-only" data-print-for="update">
-                {% for line in item.update_lines %}<p>{{ line }}</p>{% endfor %}
-              </div>
+              <div class="quill-editor" data-field="update"></div>
             </div>
           </div>
 
@@ -664,8 +652,40 @@
 
   </div><!-- /page -->
 
+  <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
   <script>
     const stageColours = {{ stage_colours | tojson }};
+
+    /* ── Quill toolbar config ───────────────────────────────────────── */
+    const QUILL_TOOLBAR = [
+      ['bold', 'italic'],
+      [{ 'background': ['#FFFF00', '#00FF00', false] }],
+      [{ 'list': 'bullet' }, { 'list': 'ordered' }],
+      [{ 'indent': '-1' }, { 'indent': '+1' }],
+    ];
+
+    /* ── Initialise all Quill editors ──────────────────────────────── */
+    document.querySelectorAll('.quill-editor').forEach(container => {
+      const quill = new Quill(container, {
+        theme: 'snow',
+        modules: { toolbar: QUILL_TOOLBAR },
+      });
+      container._quill = quill;
+
+      // Seed summary editors from server-passed lines
+      if (container.dataset.field === 'summary') {
+        const seed = container.dataset.seed;
+        if (seed) {
+          try {
+            const lines = JSON.parse(seed);
+            if (lines && lines.length) {
+              const html = '<p>' + lines.join('</p><p>') + '</p>';
+              quill.clipboard.dangerouslyPasteHTML(html);
+            }
+          } catch (e) { /* ignore parse errors */ }
+        }
+      }
+    });
   </script>
 
   <script>
@@ -675,7 +695,7 @@
       ta.style.height = ta.scrollHeight + 'px';
     }
     function initAutoResize() {
-      document.querySelectorAll('.field-textarea, .upsell-textarea').forEach(ta => {
+      document.querySelectorAll('.upsell-textarea').forEach(ta => {
         autoResize(ta);
         ta.addEventListener('input', () => autoResize(ta));
       });
@@ -704,21 +724,27 @@
     }
     initExclude();
 
-    /* ── Collect current deal state from DOM ────────────────────────── */
+    /* ── HTML empty check (must be before collectDeals) ────────────── */
+    function _htmlIsEmpty(html) {
+      return !(html || '').replace(/<[^>]+>/g, '').replace(/\u00a0/g, ' ').trim();
+    }
+
+    /* ── Collect current deal state from DOM ───────────────────────── */
     function collectDeals() {
       const deals = [];
       document.querySelectorAll('.deal-block').forEach(block => {
-        const summaryTA = block.querySelector('.summary-textarea');
-        const updateTA  = block.querySelector('.update-textarea');
-        const excludeCB = block.querySelector('.exclude-checkbox');
-        const rawUpdate = updateTA ? updateTA.value.trim() : '';
-        const hasUpdate = rawUpdate !== '' && rawUpdate !== 'No update.';
+        const summaryEl  = block.querySelector('.quill-editor[data-field="summary"]');
+        const updateEl   = block.querySelector('.quill-editor[data-field="update"]');
+        const excludeCB  = block.querySelector('.exclude-checkbox');
+        const summaryHtml = summaryEl ? summaryEl._quill.root.innerHTML : '';
+        const updateHtml  = updateEl  ? updateEl._quill.root.innerHTML  : '';
+        const hasUpdate   = !_htmlIsEmpty(updateHtml);
         deals.push({
-          deal:          block.dataset.deal,
-          mentioned:     hasUpdate || block.dataset.mentioned === 'true',
-          excluded:      excludeCB ? excludeCB.checked : false,
-          summary_lines: summaryTA ? summaryTA.value.split('\n').filter(l => l.trim()) : [],
-          update_lines:  updateTA  ? updateTA.value.split('\n').filter(l => l.trim())  : [],
+          deal:         block.dataset.deal,
+          mentioned:    hasUpdate || block.dataset.mentioned === 'true',
+          excluded:     excludeCB ? excludeCB.checked : false,
+          summary_html: summaryHtml,
+          update_html:  updateHtml,
         });
       });
       return deals;
