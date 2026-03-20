@@ -1,4 +1,4 @@
-import os, base64, io
+import os, re, base64, io
 from datetime import date
 from flask import Flask, render_template, request, jsonify, session
 from PIL import Image
@@ -10,7 +10,8 @@ from charts import generate_quadrant
 from pdf_renderer import render_pdf
 from pdf_reader import extract_portfolio_text
 from ai_writer import (draft_updates_from_transcript, extract_upsell_items,
-                        update_summaries_from_updates, generate_high_level_summary)
+                        update_summaries_from_updates, generate_high_level_summary,
+                        _html_to_text, _lines_to_html)
 from history import (load_history, save_history, update_deal,
                      set_last_run_date, should_include, get_deal)
 
@@ -44,6 +45,12 @@ def _fy_week(d: date = None) -> int:
         d = date.today()
     fy_start_year = d.year if d.month >= 5 else d.year - 1
     return (d - date(fy_start_year, 5, 1)).days // 7 + 1
+
+
+def _html_is_empty(html: str) -> bool:
+    """Return True if the HTML contains no meaningful text content."""
+    text = re.sub(r'<[^>]+>', '', html or '').replace('\xa0', ' ').strip()
+    return not text
 
 
 def _enrich_stage(items: list[dict], deal_stage_map: dict) -> None:
@@ -114,7 +121,10 @@ def generate():
                 "mentioned":      False,
                 "update_lines":   [],
                 "summary_action": "unchanged",
-                "summary_lines":  entry.get("summary_lines", []) if entry else [],
+                "summary_lines":  (
+                    [l for l in _html_to_text(entry.get("summary_html", "")).splitlines() if l.strip()]
+                    if entry else []
+                ),
                 "excluded":       False,
             })
         _enrich_stage(all_updates, deal_stage_map)
@@ -151,8 +161,7 @@ def generate_pdf():
     # Auto-exclude deals with no real update (blank = omission, not intentional include)
     for item in client_deals:
         if not item.get("excluded", False):
-            lines = item.get("update_lines", [])
-            if not any(l.strip() and l.strip() != "No update." for l in lines):
+            if _html_is_empty(item.get("update_html", "")):
                 item["excluded"] = True
 
     # ── 1. Enrich with stage data from Smartsheet ─────────────────────────────
@@ -168,19 +177,19 @@ def generate_pdf():
     deals_needing_update = [
         {
             "deal":                   item["deal"],
-            "existing_summary_lines": item.get("summary_lines", []),
-            "update_lines":           item["update_lines"],
+            "existing_summary_lines": [_html_to_text(item.get("summary_html", ""))],
+            "update_lines":           [_html_to_text(item.get("update_html", ""))],
         }
         for item in client_deals
-        if item.get("update_lines") and not item.get("excluded", False)
-        and any(l.strip() and l.strip() != "No update." for l in item["update_lines"])
+        if item.get("update_html") and not item.get("excluded", False)
+        and not _html_is_empty(item.get("update_html", ""))
     ]
     if deals_needing_update:
         try:
             updated_summaries = update_summaries_from_updates(deals_needing_update)
             for item in client_deals:
                 if item["deal"] in updated_summaries:
-                    item["summary_lines"] = updated_summaries[item["deal"]]
+                    item["summary_html"] = _lines_to_html(updated_summaries[item["deal"]])
         except Exception as e:
             print(f"Summary update AI call failed: {e}")
             return jsonify({"ok": False, "error": f"Summary update failed: {e}"}), 500
@@ -194,8 +203,8 @@ def generate_pdf():
         mentioned = item.get("mentioned", False)
         update_deal(
             history, item["deal"],
-            summary_lines=item.get("summary_lines"),
-            update_lines=item.get("update_lines"),
+            summary_html=item.get("summary_html"),
+            update_html=item.get("update_html"),
             discussed=mentioned,
             report_date=today,
         )
@@ -234,8 +243,8 @@ def generate_pdf():
             "deal":          item["deal"],
             "stage":         item.get("stage", ""),
             "stage_num":     item.get("stage_num", "0"),
-            "summary_lines": item.get("summary_lines", []),
-            "update_lines":  item.get("update_lines", []),
+            "summary_lines": [_html_to_text(item.get("summary_html", ""))],
+            "update_lines":  [_html_to_text(item.get("update_html", ""))],
             "forecast":      item.get("forecast", ""),
         }
         for item in client_deals
@@ -246,6 +255,13 @@ def generate_pdf():
     except Exception as e:
         print(f"High-level summary failed: {e}")
         high_level_summary = []
+
+    # Normalise empty Quill output so Jinja {% if %} guards work cleanly
+    for item in client_deals:
+        if _html_is_empty(item.get("summary_html", "")):
+            item["summary_html"] = ""
+        if _html_is_empty(item.get("update_html", "")):
+            item["update_html"] = ""
 
     # ── 6. Render PDF ─────────────────────────────────────────────────────────
     html = render_template(
@@ -285,8 +301,8 @@ def history_editor():
         deals.append({
             "key":                key,
             "display_name":       val.get("display_name", key),
-            "summary_lines":      val.get("summary_lines") or [],
-            "last_update_lines":  val.get("last_update_lines") or [],
+            "summary_lines":      [l for l in _html_to_text(val.get("summary_html", "")).splitlines() if l.strip()],
+            "last_update_lines":  [l for l in _html_to_text(val.get("last_update_html", "")).splitlines() if l.strip()],
             "last_discussed_date": val.get("last_discussed_date", ""),
             "last_included_date":  val.get("last_included_date", ""),
         })
@@ -310,8 +326,10 @@ def history_editor_save():
             continue
         entry = history[key]
         entry["display_name"]      = item.get("display_name", entry.get("display_name", ""))
-        entry["summary_lines"]     = [l for l in item.get("summary_lines", []) if l.strip()]
-        entry["last_update_lines"] = [l for l in item.get("last_update_lines", []) if l.strip()]
+        entry["summary_html"]      = _lines_to_html(item.get("summary_lines", []))
+        entry["last_update_html"]  = _lines_to_html(item.get("last_update_lines", []))
+        entry.pop("summary_lines", None)
+        entry.pop("last_update_lines", None)
     save_history(history)
     return jsonify({"ok": True})
 
