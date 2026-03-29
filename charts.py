@@ -16,18 +16,18 @@ _CHIPS_PER_ROW = 2
 _X_START       = 0.04   # left margin (axes fraction)
 _Y_START       = 0.80   # top of chip area, below zone header
 _COL_WIDTH     = 0.48   # horizontal step between chip columns
-_ROW_HEIGHT    = 0.11   # vertical step between chip rows (tall enough for 2-line chips)
-_MAX_ROWS      = 7      # floor(0.80 / 0.11) = 7 rows visible
-_WRAP_CHARS    = 20     # wrap deal names at this many characters per line
+_ROW_HEIGHT    = 0.13   # vertical step between chip rows
+_MAX_ROWS      = 6      # floor(0.80 / 0.13) = 6 rows visible
+_WRAP_CHARS    = 18     # wrap deal names at this many characters per line
 
 
 def _font_size(n: int) -> float:
     """Return chip font size (pt) based on number of deals in zone."""
     if n <= 9:
-        return 8.5
+        return 10.5
     if n <= 15:
-        return 7.5
-    return 6.5
+        return 9.0
+    return 7.5
 
 
 def _stage_int(stage: str) -> int:
@@ -93,8 +93,8 @@ def generate_quadrant(deals: list[dict]) -> str:
         # Zone header
         ax.text(0.04, 0.94, label.upper(),
                 transform=ax.transAxes,
-                fontsize=9, fontweight="bold",
-                color=header_col, alpha=0.55,
+                fontsize=11, fontweight="bold",
+                color=header_col, alpha=0.80,
                 va="top", ha="left")
 
         deals_in_zone = zone_deals[(row, col)]
@@ -116,7 +116,7 @@ def generate_quadrant(deals: list[dict]) -> str:
                     transform=ax.transAxes,
                     fontsize=fs, color="white", fontweight="bold",
                     ha="left", va="center",
-                    bbox=dict(boxstyle="round,pad=0.3",
+                    bbox=dict(boxstyle="round,pad=0.45",
                               facecolor=colour,
                               edgecolor="none",
                               alpha=0.92))
@@ -145,11 +145,11 @@ def generate_quadrant(deals: list[dict]) -> str:
         spine.set_visible(False)
     overlay.text(0.5, 0.02, "Revenue \u2192",
                  transform=overlay.transAxes,
-                 fontsize=13, fontweight="bold",
+                 fontsize=15, fontweight="bold",
                  ha="center", va="bottom")
     overlay.text(0.02, 0.5, "Strategic Fit \u2192",
                  transform=overlay.transAxes,
-                 fontsize=13, fontweight="bold",
+                 fontsize=15, fontweight="bold",
                  ha="left", va="center", rotation=90)
 
     buf = io.BytesIO()

@@ -7,7 +7,7 @@ def extract_portfolio_text(pdf_path: str) -> str:
     try:
         with pdfplumber.open(pdf_path) as pdf:
             pages = [page.extract_text() or "" for page in pdf.pages]
-        return "\n".join(pages)[:4000]
+        return "\n".join(pages)
     except Exception as e:
         print(f"PDF read failed: {e}")
         return ""

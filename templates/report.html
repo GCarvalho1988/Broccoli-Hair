@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet" />
   <style>
     /* ─── Reset & base ─────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -407,7 +408,7 @@
       min-height: 60px;
       height: auto;
     }
-    .ql-container { font-family: var(--font-body); font-size: 0.875rem; }
+    .ql-container { font-family: var(--font-body); font-size: 0.875rem; height: auto; }
     .ai-draft .ql-container { border-color: var(--s-orange); background: var(--ai-bg); }
 
     /* ─── Upsell ─────────────────────────────────────────────────────── */
@@ -471,7 +472,6 @@
       .ai-draft { border-color: var(--border) !important; background: transparent !important; }
     }
   </style>
-  <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet" />
 </head>
 <body data-report-date="{{ report_date | e }}" data-fy-week="{{ fy_week }}">
 
@@ -568,7 +568,7 @@
             <div class="print-label print-only">Summary</div>
             <div>
               <div class="quill-editor" data-field="summary"
-                   data-seed="{{ item.summary_lines | tojson | e }}"></div>
+                   data-seed="{{ item.summary_lines | tojson | forceescape }}"></div>
             </div>
           </div>
 
@@ -590,7 +590,7 @@
     <section class="report-section upsell-section">
       <h2 class="section-heading">Upsell &amp; Other Updates</h2>
       <div class="upsell-body">
-        <div id="upsellEditor" data-seed="{{ upsell_items | tojson | e }}"></div>
+        <div id="upsellEditor" data-seed="{{ upsell_items | tojson | forceescape }}"></div>
       </div>
     </section>
 

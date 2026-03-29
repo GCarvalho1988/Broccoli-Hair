@@ -90,8 +90,6 @@
       border-top: 3px solid var(--orange);
       border-radius: 2px;
       margin-bottom: 6mm;
-      break-inside: avoid;
-      page-break-inside: avoid;
     }
     .section-heading {
       font-family: 'Barlow Condensed', Arial Narrow, sans-serif;
@@ -340,14 +338,14 @@
           {% if item.summary_html %}
           <div class="deal-section">
             <div class="deal-section-label">Summary</div>
-            <div class="deal-summary deal-section-lines">{{ item.summary_html | safe }}</div>
+            <div class="deal-section-lines deal-summary">{{ item.summary_html | safe }}</div>
           </div>
           {% endif %}
 
           {% if item.update_html %}
           <div class="deal-section">
             <div class="deal-section-label">Update</div>
-            <div class="deal-update deal-section-lines">{{ item.update_html | safe }}</div>
+            <div class="deal-section-lines deal-update">{{ item.update_html | safe }}</div>
           </div>
           {% endif %}
         </div>

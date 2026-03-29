@@ -1,4 +1,5 @@
 import os, re, base64, io
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date
 from flask import Flask, render_template, request, jsonify, session
 from PIL import Image
@@ -75,30 +76,46 @@ def generate():
     # Store transcript for reference (kept for session but no longer drives regenerate)
     session["transcript"] = transcript
 
-    # ── Portfolio PDF → upsell items ─────────────────────────────────────────
+    # ── Portfolio PDF → text (must complete before upsell task starts) ────────
     portfolio_text = ""
-    upsell_items   = []
     pdf_file = request.files.get("portfolio_pdf")
     if pdf_file and pdf_file.filename:
         path = os.path.join(UPLOAD_FOLDER, "portfolio.pdf")
         pdf_file.save(path)
         portfolio_text = extract_portfolio_text(path)
-    if portfolio_text:
-        upsell_items = extract_upsell_items(portfolio_text)
 
-    # ── Dashboard screenshot ──────────────────────────────────────────────────
+    # ── Parallel: dashboard screenshot · pipeline data · upsell extraction ───
+    # All three are I/O-bound with no dependencies on each other.
     dashboard_b64 = None
-    try:
-        png = capture_dashboard()
-        dashboard_b64 = base64.b64encode(png).decode("utf-8")
-        # Persist for /pdf route (single-user app — last generate wins)
-        with open(os.path.join(UPLOAD_FOLDER, "last_dashboard.b64"), "w") as fh:
-            fh.write(dashboard_b64)
-    except Exception as e:
-        print(f"Dashboard capture failed: {e}")
+    deals         = []
+    upsell_items  = []
 
-    # ── Pipeline data + chart ─────────────────────────────────────────────────
-    deals = fetch_pipeline_data()
+    def _task_dashboard():
+        try:
+            png = capture_dashboard()
+            b64 = base64.b64encode(png).decode("utf-8")
+            with open(os.path.join(UPLOAD_FOLDER, "last_dashboard.b64"), "w") as fh:
+                fh.write(b64)
+            return b64
+        except Exception as e:
+            print(f"Dashboard capture failed: {e}")
+            return None
+
+    def _task_pipeline():
+        return fetch_pipeline_data()
+
+    def _task_upsell():
+        return extract_upsell_items(portfolio_text) if portfolio_text else []
+
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        f_dash    = pool.submit(_task_dashboard)
+        f_deals   = pool.submit(_task_pipeline)
+        f_upsell  = pool.submit(_task_upsell)
+        dashboard_b64 = f_dash.result()
+        deals         = f_deals.result()
+        upsell_items  = f_upsell.result()
+
+    # ── Quadrant chart (fast, needs deals) ───────────────────────────────────
     try:
         quadrant_b64 = generate_quadrant(deals)
         if not quadrant_b64:
@@ -152,8 +169,9 @@ def generate():
 @app.route("/pdf", methods=["POST"])
 def generate_pdf():
     """
-    Finalise: AI-update summaries → save history → render PDF → download.
-    Accepts JSON: { deals, upsell_items, report_date, fy_week }
+    Finalise: AI-update summaries → render PDF → save history → download.
+    History is written only after PDF renders successfully to prevent duplication
+    on retry. Accepts JSON: { deals, upsell_items, report_date, fy_week }
     """
     data = request.get_json()
     if not data:
@@ -179,44 +197,7 @@ def generate_pdf():
     deal_stage_map = {d["Opportunity"].lower(): d for d in deals_from_sheet}
     _enrich_stage(client_deals, deal_stage_map)
 
-    # ── 2. AI: merge update text into summaries (only edited, non-excluded deals) ──
-    deals_needing_update = [
-        {
-            "deal":                   item["deal"],
-            "existing_summary_lines": [_html_to_text(item.get("summary_html", ""))],
-            "update_lines":           [_html_to_text(item.get("update_html", ""))],
-        }
-        for item in client_deals
-        if not item.get("excluded", False) and not _html_is_empty(item.get("update_html", ""))
-    ]
-    if deals_needing_update:
-        try:
-            updated_summaries = update_summaries_from_updates(deals_needing_update)
-            for item in client_deals:
-                if item["deal"] in updated_summaries:
-                    item["summary_html"] = _lines_to_html(updated_summaries[item["deal"]])
-        except Exception as e:
-            print(f"Summary update AI call failed: {e}")
-            return jsonify({"ok": False, "error": f"Summary update failed: {e}"}), 500
-
-    # ── 3. Save history ───────────────────────────────────────────────────────
-    history = load_history()
-    today   = data.get("run_date", date.today().isoformat())
-    for item in client_deals:
-        if item.get("excluded", False):
-            continue
-        mentioned = item.get("mentioned", False)
-        update_deal(
-            history, item["deal"],
-            summary_html=item.get("summary_html"),
-            update_html=item.get("update_html"),
-            discussed=mentioned,
-            report_date=today,
-        )
-    set_last_run_date(history, today)
-    save_history(history)
-
-    # ── 4. Charts and images ──────────────────────────────────────────────────
+    # ── 2. Charts and images ──────────────────────────────────────────────────
     dashboard_b64 = None
     b64_path = os.path.join(UPLOAD_FOLDER, "last_dashboard.b64")
     if os.path.exists(b64_path):
@@ -248,8 +229,8 @@ def generate_pdf():
             "deal":          item["deal"],
             "stage":         item.get("stage", ""),
             "stage_num":     item.get("stage_num", "0"),
-            "summary_lines": [_html_to_text(item.get("summary_html", ""))],
-            "update_lines":  [_html_to_text(item.get("update_html", ""))],
+            "summary_lines": [l for l in _html_to_text(item.get("summary_html", "")).splitlines() if l.strip()],
+            "update_lines":  [l for l in _html_to_text(item.get("update_html", "")).splitlines() if l.strip()],
             "forecast":      item.get("forecast", ""),
         }
         for item in client_deals
@@ -287,6 +268,41 @@ def generate_pdf():
         print(f"PDF render failed: {e}")
         return jsonify({"ok": False, "error": f"PDF generation failed: {e}"}), 500
 
+    # ── 7. AI: merge updates into summaries (after PDF, so PDF shows original summaries) ──
+    deals_needing_update = [
+        {
+            "deal":                   item["deal"],
+            "existing_summary_lines": [l for l in _html_to_text(item.get("summary_html", "")).splitlines() if l.strip()],
+            "update_lines":           [l for l in _html_to_text(item.get("update_html", "")).splitlines() if l.strip()],
+        }
+        for item in client_deals
+        if not item.get("excluded", False) and not _html_is_empty(item.get("update_html", ""))
+    ]
+    if deals_needing_update:
+        try:
+            updated_summaries = update_summaries_from_updates(deals_needing_update)
+            for item in client_deals:
+                if item["deal"] in updated_summaries:
+                    item["summary_html"] = _lines_to_html(updated_summaries[item["deal"]])
+        except Exception as e:
+            print(f"Summary update failed (saving original summaries to history): {e}")
+
+    # ── 8. Save history (only after PDF succeeds) ─────────────────────────────
+    history = load_history()
+    today   = data.get("run_date", date.today().isoformat())
+    for item in client_deals:
+        if item.get("excluded", False):
+            continue
+        update_deal(
+            history, item["deal"],
+            summary_html=item.get("summary_html"),
+            update_html=item.get("update_html"),
+            discussed=item.get("mentioned", False),
+            report_date=today,
+        )
+    set_last_run_date(history, today)
+    save_history(history)
+
     filename = f"SM_Weekly_Report_Week_{fy_week}.pdf"
     from flask import Response as FlaskResponse
     return FlaskResponse(
@@ -310,6 +326,15 @@ def history_editor():
             "last_update_lines":  [l for l in _html_to_text(val.get("last_update_html", "")).splitlines() if l.strip()],
             "last_discussed_date": val.get("last_discussed_date", ""),
             "last_included_date":  val.get("last_included_date", ""),
+            "previous_summary_text": (
+                "\n".join(
+                    l for l in _html_to_text(val.get("previous_summary_html", "")).splitlines() if l.strip()
+                ) or None
+            ) if val.get("previous_summary_html") else None,
+            "update_history": [
+                {"date": h["date"], "text": _html_to_text(h.get("html", "")).strip()}
+                for h in reversed(val.get("update_history", []))
+            ],
         })
     deals.sort(key=lambda d: d["display_name"].lower())
     return render_template("history.html", deals=deals,
@@ -330,9 +355,12 @@ def history_editor_save():
             del history[key]
             continue
         entry = history[key]
-        entry["display_name"]      = item.get("display_name", entry.get("display_name", ""))
-        entry["summary_html"]      = _lines_to_html(item.get("summary_lines", []))
-        entry["last_update_html"]  = _lines_to_html(item.get("last_update_lines", []))
+        entry["display_name"] = item.get("display_name", entry.get("display_name", ""))
+        new_summary = _lines_to_html(item.get("summary_lines", []))
+        if entry.get("summary_html") and entry["summary_html"] != new_summary:
+            entry["previous_summary_html"] = entry["summary_html"]
+        entry["summary_html"]     = new_summary
+        entry["last_update_html"] = _lines_to_html(item.get("last_update_lines", []))
         entry.pop("summary_lines", None)
         entry.pop("last_update_lines", None)
     save_history(history)

@@ -112,9 +112,19 @@ def update_deal(history: dict, name: str, *,
     entry = history[k]
     entry["display_name"] = name.strip()
     if summary_html is not None:
+        if entry.get("summary_html"):
+            entry["previous_summary_html"] = entry["summary_html"]
         entry["summary_html"] = summary_html
     if update_html is not None:
         entry["last_update_html"] = update_html
+        text = re.sub(r'<[^>]+>', '', update_html).replace('\xa0', ' ').strip()
+        if text:
+            entry.setdefault("update_history", []).append({
+                "date": today,
+                "html": update_html,
+            })
+            if len(entry["update_history"]) > 5:
+                entry["update_history"] = entry["update_history"][-5:]
     entry["last_included_date"] = today
     if discussed:
         entry["last_discussed_date"] = today

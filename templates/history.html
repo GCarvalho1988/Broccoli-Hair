@@ -217,6 +217,65 @@
     }
     .btn-delete:hover { border-color: var(--danger); color: var(--danger); }
 
+    .btn-revert {
+      font-family: 'Barlow Condensed', Arial Narrow, sans-serif;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.3em 0.75em;
+      border-radius: 2px;
+      border: 1.5px solid var(--s-cyan);
+      background: transparent;
+      color: var(--s-cyan);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+    .btn-revert:hover:not(:disabled) { background: var(--s-cyan); color: var(--white); }
+    .btn-revert:disabled { opacity: 0.45; cursor: default; }
+
+    .update-history-details { margin-top: 0.5rem; }
+    .update-history-details > summary {
+      font-family: 'Barlow Condensed', Arial Narrow, sans-serif;
+      font-size: 0.63rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+      list-style: none;
+      padding: 0.3rem 0;
+    }
+    .update-history-details > summary::-webkit-details-marker { display: none; }
+    .update-history-details > summary::before { content: '▶  '; font-size: 0.65em; }
+    .update-history-details[open] > summary::before { content: '▼  '; }
+
+    .update-history-list { margin-top: 0.4rem; }
+    .update-entry {
+      border-left: 2px solid var(--border);
+      padding: 0.45rem 0 0.45rem 0.85rem;
+      margin-bottom: 0.55rem;
+    }
+    .update-entry:last-child { margin-bottom: 0; }
+    .update-date {
+      font-family: 'Barlow Condensed', Arial Narrow, sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.2rem;
+    }
+    .update-text {
+      font-size: 0.83rem;
+      font-weight: 300;
+      color: var(--body);
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
     /* ─── Field ────────────────────────────────────────────────────── */
     .deal-card-body { padding: 1rem 1.25rem 1.1rem; }
 
@@ -302,6 +361,9 @@
             {% if deal.last_discussed_date and deal.last_included_date %} &nbsp;·&nbsp; {% endif %}
             {% if deal.last_included_date %}included {{ deal.last_included_date }}{% endif %}
           </div>
+          {% if deal.previous_summary_text %}
+          <button class="btn-revert" onclick="revertSummary(this)">↩ Revert Summary</button>
+          {% endif %}
           <button class="btn-delete" onclick="markDeleted(this)">Delete</button>
         </div>
         <div class="deal-card-body">
@@ -313,6 +375,24 @@
             <label class="field-label">Last Update</label>
             <textarea class="field-textarea update-ta">{{ deal.last_update_lines | join('\n') }}</textarea>
           </div>
+          {% if deal.previous_summary_text %}
+          <textarea class="previous-summary-text" style="display:none">{{ deal.previous_summary_text }}</textarea>
+          {% endif %}
+          {% if deal.update_history %}
+          <div class="field" style="margin-bottom:0">
+            <details class="update-history-details">
+              <summary>Past Updates ({{ deal.update_history | length }})</summary>
+              <div class="update-history-list">
+                {% for entry in deal.update_history %}
+                <div class="update-entry">
+                  <div class="update-date">{{ entry.date }}</div>
+                  <div class="update-text">{{ entry.text }}</div>
+                </div>
+                {% endfor %}
+              </div>
+            </details>
+          </div>
+          {% endif %}
         </div>
       </div>
       {% endfor %}
@@ -328,6 +408,19 @@
       autoResize(ta);
       ta.addEventListener('input', () => autoResize(ta));
     });
+
+    /* Revert summary to pre-AI version */
+    function revertSummary(btn) {
+      const card = btn.closest('.deal-card');
+      const prevTa = card.querySelector('.previous-summary-text');
+      const summaryTa = card.querySelector('.summary-ta');
+      if (prevTa && summaryTa) {
+        summaryTa.value = prevTa.value;
+        autoResize(summaryTa);
+        btn.textContent = '✓ Reverted';
+        btn.disabled = true;
+      }
+    }
 
     /* Mark for deletion */
     function markDeleted(btn) {

@@ -120,27 +120,56 @@ RULES:
 
 def extract_upsell_items(portfolio_text: str) -> list[str]:
     """
-    Extract upsell / cross-sell opportunities from a portfolio report.
-    Returns a list of short opportunity strings, or [] if none found.
+    Parse each portfolio's 'Sales Opportunities' section from the full PDF text,
+    then ask AI to produce a 1-2 sentence summary per portfolio.
+    Returns a list of "Portfolio Name – summary" strings, or [] if none found.
     """
     if not portfolio_text.strip():
         return []
 
-    prompt = f"""You are helping a UK medical imaging software sales team identify upsell and cross-sell opportunities.
+    # ── Parse per-portfolio Sales Opportunities sections ──────────────────────
+    # Header format: "CO UK Weekly Report - Benton Eir Portfolio (1) - Report"
+    header_re = re.compile(r'CO UK Weekly Report\s*-\s*(.+?)\s*Portfolio', re.IGNORECASE)
+    sales_re  = re.compile(r'Sales Opportunities:\s*\n(.*?)(?=Submitted by:|$)', re.DOTALL | re.IGNORECASE)
 
-Extract concrete opportunities from the portfolio report below.
-Include: product upgrades, contract renewals, expansion to new sites, new module sales, support contract extensions.
-Be specific — name the customer and opportunity where possible. If none, return [].
+    headers = list(header_re.finditer(portfolio_text))
+    portfolio_opps = []
 
-PORTFOLIO REPORT:
-{portfolio_text[:3000]}
+    for i, match in enumerate(headers):
+        name = match.group(1).strip()
+        start = match.start()
+        end   = headers[i + 1].start() if i + 1 < len(headers) else len(portfolio_text)
+        section = portfolio_text[start:end]
 
-Respond with raw JSON only — a list of strings (no markdown):
-["<opportunity 1>", "<opportunity 2>", ...]"""
+        sales_match = sales_re.search(section)
+        if not sales_match:
+            continue
+        opps = sales_match.group(1).strip()
+        if opps.lower() in ("none", "n/a", ""):
+            continue
+        portfolio_opps.append({"portfolio": name, "opportunities": opps})
+
+    if not portfolio_opps:
+        return []
+
+    # ── Ask AI to summarise each portfolio in 1-2 sentences ───────────────────
+    blocks = ""
+    for p in portfolio_opps:
+        blocks += f"\n\n[{p['portfolio']}]\n{p['opportunities']}"
+
+    prompt = f"""You are summarising sales opportunities for a UK medical imaging software sales team (Sectra UK&I).
+
+For each portfolio below, write one concise sentence (two at most) capturing the key opportunity.
+Omit portfolios with nothing material. If none, return [].
+
+{blocks}
+
+Respond with raw JSON only — a list of strings, one per portfolio (no markdown):
+["<Portfolio Name> – <summary>", ...]"""
 
     message = client.messages.create(
         model=MODEL,
-        max_tokens=1000,
+        max_tokens=800,
         messages=[{"role": "user", "content": prompt}]
     )
 
